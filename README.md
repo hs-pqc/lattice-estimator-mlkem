@@ -56,9 +56,19 @@ The gap grows as n increases.
 768  → 1024: +70.2 bits (primal), +65.9 bits (dual)
 Not exactly 64 bits per step — the increment grows with n.
 
-**3. ML-KEM-768 anomaly**
-ζ=20 only for ML-KEM-768, suggesting the optimizer finds
-a different attack strategy at this parameter size.
+**3. ML-KEM-768 anomaly (ζ=20)**  
+ζ represents additional dimension reduction beyond the guessing part.  
+The optimizer finds different strategies per parameter:
+
+- ML-KEM-512 (η=3): Secret coefficients are relatively large →  
+  guessing (p=5) is more efficient than dimension reduction (ζ=0)
+- ML-KEM-768 (η=2): Balanced n and small secret →  
+  dimension reduction (ζ=20) hits the optimal cost tradeoff
+- ML-KEM-1024 (η=2): n is too large →  
+  dimension reduction gains are outweighed by guessing cost (ζ=0)
+
+This suggests the dual hybrid optimizer is sensitive to the
+interaction between secret distribution width (η) and lattice dimension (n).
 
 ## References
 

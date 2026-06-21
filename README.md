@@ -69,6 +69,26 @@ The optimizer finds different strategies per parameter:
 
 This suggests the dual hybrid optimizer is sensitive to the
 interaction between secret distribution width (η) and lattice dimension (n).
+## Sparse Secret Analysis
+
+Effect of Hamming weight on security bits (ML-KEM-768, dual hybrid).
+
+| Hamming weight (h) | Security (bits) | Δ from standard | ζ |
+|-------------------|----------------|-----------------|---|
+| Standard (CBD η=2) | 196.4 | - | 20 |
+| h=30 | 164.1 | -32.3 | 0 |
+| h=50 | 169.9 | -26.5 | 0 |
+| h=100 | 181.1 | -15.3 | 30 |
+| h=200 | 190.9 | -5.5 | 20 |
+
+**Key Observation:**  
+Security bits drop sharply as Hamming weight decreases.  
+h=30 shows the largest gap (-32.3 bits from standard).  
+As h increases, security converges back toward the standard parameter.
+
+This directly relates to the key finding of:  
+*"From Perfect to Approximate Hints"* (S&P 2026, Changmin Lee et al.)  
+— sparse secrets amplify the effectiveness of hints in LWE attacks.
 
 ## References
 

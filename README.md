@@ -1,13 +1,36 @@
 # ML-KEM Security Analysis using lattice-estimator
 
-Security bit estimation for ML-KEM parameter sets using the
-[lattice-estimator](https://github.com/malb/lattice-estimator).
+Security bit estimation for ML-KEM parameter sets using the lattice-estimator.
+
+---
 
 ## Environment
 
 - SageMath 9.x
-- lattice-estimator
+- lattice-estimator (Albrecht et al.)
 - Docker
+
+## 재현 방법
+
+```bash
+# SageMath Docker 컨테이너 실행
+docker run --rm -it sagemath/sagemath:latest bash
+
+# lattice-estimator 설치
+pip install lattice-estimator
+
+# 스크립트 실행
+sage estimate_mlkem.sage
+```
+
+또는 SageMath 설치 환경에서:
+
+```bash
+sage -pip install lattice-estimator
+sage estimate_mlkem.sage
+```
+
+---
 
 ## Parameters
 
@@ -22,76 +45,91 @@ LWE.Parameters(n=768, q=3329, Xs=ND.CenteredBinomial(2), Xe=ND.CenteredBinomial(
 LWE.Parameters(n=1024, q=3329, Xs=ND.CenteredBinomial(2), Xe=ND.CenteredBinomial(2))
 ```
 
+---
+
 ## Results
 
 ### Primal Attack (usvp)
 
 | Parameter | n | Security (bits) | β (BKZ block size) |
-|-----------|---|-----------------|-------------------|
-| ML-KEM-512  | 512  | 143.8 | 406 |
-| ML-KEM-768  | 768  | 204.9 | 624 |
+|---|---|---|---|
+| ML-KEM-512 | 512 | 143.8 | 406 |
+| ML-KEM-768 | 768 | 204.9 | 624 |
 | ML-KEM-1024 | 1024 | 275.1 | 874 |
 
 ### Dual Hybrid Attack
 
 | Parameter | Security (bits) | β | p | ζ |
-|-----------|----------------|---|---|---|
-| ML-KEM-512  | 139.7 | 387 | 5 | 0  |
-| ML-KEM-768  | 196.4 | 589 | 4 | 20 |
-| ML-KEM-1024 | 262.3 | 823 | 4 | 0  |
+|---|---|---|---|---|
+| ML-KEM-512 | 139.7 | 387 | 5 | 0 |
+| ML-KEM-768 | 196.4 | 589 | 4 | 20 |
+| ML-KEM-1024 | 262.3 | 823 | 4 | 0 |
+
+---
 
 ## Key Observations
 
-**1. Dual hybrid is consistently more efficient than primal**
-ML-KEM-512:  Δ = 4.1 bits
+### 1. Dual hybrid이 primal보다 일관되게 효율적
 
-ML-KEM-768:  Δ = 8.5 bits
+| 파라미터셋 | Δ (bits) |
+|---|---|
+| ML-KEM-512 | 4.1 bits |
+| ML-KEM-768 | 8.5 bits |
+| ML-KEM-1024 | 12.8 bits |
 
-ML-KEM-1024: Δ = 12.8 bits
-The gap grows as n increases.
+격자 차원 n이 커질수록 dual hybrid의 meet-in-the-middle 단계가
+더 효과적으로 작동함. sparse secret 특성이 강해질수록 이 격차는 더 벌어짐.
 
-**2. Security scaling**
-512  → 768:  +61.1 bits (primal), +56.7 bits (dual)
+### 2. 보안 레벨 스케일링
 
-768  → 1024: +70.2 bits (primal), +65.9 bits (dual)
-Not exactly 64 bits per step — the increment grows with n.
+| 구간 | Primal 증가 | Dual 증가 |
+|---|---|---|
+| 512 → 768 | +61.1 bits | +56.7 bits |
+| 768 → 1024 | +70.2 bits | +65.9 bits |
 
-**3. ML-KEM-768 anomaly (ζ=20)**  
-ζ represents additional dimension reduction beyond the guessing part.  
-The optimizer finds different strategies per parameter:
+정확히 64-bit씩 증가하지 않음. n이 커질수록 증가폭이 커지는 비선형 구조.
 
-- ML-KEM-512 (η=3): Secret coefficients are relatively large →  
-  guessing (p=5) is more efficient than dimension reduction (ζ=0)
-- ML-KEM-768 (η=2): Balanced n and small secret →  
-  dimension reduction (ζ=20) hits the optimal cost tradeoff
-- ML-KEM-1024 (η=2): n is too large →  
-  dimension reduction gains are outweighed by guessing cost (ζ=0)
+### 3. ML-KEM-768 anomaly (ζ=20)
 
-This suggests the dual hybrid optimizer is sensitive to the
-interaction between secret distribution width (η) and lattice dimension (n).
+ζ: 추측(guessing) 외에 추가적인 차원 축소(dimension reduction) 크기.
+
+| 파라미터셋 | η | 전략 | 이유 |
+|---|---|---|---|
+| ML-KEM-512 | 3 | guessing(p=5), ζ=0 | 비밀키 계수가 상대적으로 커서 차원 축소보다 추측이 유리 |
+| ML-KEM-768 | 2 | ζ=20 | n과 secret 크기의 균형점에서 차원 축소가 최적 비용 |
+| ML-KEM-1024 | 2 | ζ=0 | n이 너무 커서 차원 축소 이득이 추측 비용보다 작음 |
+
+→ dual hybrid optimizer가 η(secret 분포 폭)와 n(격자 차원)의
+상호작용에 민감하게 반응함을 보여주는 사례.
+
+---
+
 ## Sparse Secret Analysis
 
-Effect of Hamming weight on security bits (ML-KEM-768, dual hybrid).
+ML-KEM-768, dual hybrid 기준 — Hamming weight별 보안 비트.
 
 | Hamming weight (h) | Security (bits) | Δ from standard | ζ |
-|-------------------|----------------|-----------------|---|
-| Standard (CBD η=2) | 196.4 | - | 20 |
-| h=30 | 164.1 | -32.3 | 0 |
-| h=50 | 169.9 | -26.5 | 0 |
-| h=100 | 181.1 | -15.3 | 30 |
+|---|---|---|---|
+| Standard (CBD η=2) | 196.4 | — | 20 |
 | h=200 | 190.9 | -5.5 | 20 |
+| h=100 | 181.1 | -15.3 | 30 |
+| h=50 | 169.9 | -26.5 | 0 |
+| h=30 | 164.1 | -32.3 | 0 |
 
-**Key Observation:**  
-Security bits drop sharply as Hamming weight decreases.  
-h=30 shows the largest gap (-32.3 bits from standard).  
-As h increases, security converges back toward the standard parameter.
+h가 낮을수록 보안 비트가 급격히 감소.
+h=30에서 표준 대비 -32.3 bits — NIST 128-bit 목표(Level 1)에
+근접하는 수준의 약화.
 
-This directly relates to the key finding of:  
-*"From Perfect to Approximate Hints"* (S&P 2026, Changmin Lee et al.)  
-— sparse secrets amplify the effectiveness of hints in LWE attacks.
+이 결과는 아래 논문의 핵심 발견과 직접 연결됨:
+
+> "From Perfect to Approximate Hints" (S&P 2026, Changmin Lee et al.)
+> — sparse secret일수록 hint 하나당 LWE 공격 효과가 증폭됨.
+
+---
 
 ## References
 
 - [NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) — ML-KEM Standard
 - [lattice-estimator](https://github.com/malb/lattice-estimator) — Albrecht et al.
-- [From Perfect to Approximate Hints](https://eprint.iacr.org/2025/1621) — S&P 2026
+- [ePrint 2026/1081] Hhan et al., "From Perfect to Approximate Hints", S&P 2026
+- 관련 구현: [ml-kem-ntt](https://github.com/hs-pqc/ml-kem-ntt)

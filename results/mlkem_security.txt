@@ -1,0 +1,56 @@
+=== ML-KEM Security Analysis (lattice-estimator) ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+=== ML-KEM-512 ===
+Primal:          rop: ≈2^143.8
+         red: ≈2^143.8
+           δ: 1.003941
+           β:      406
+           d:      998
+         tag:     usvp
+Dual:          rop: ≈2^139.7
+         red: ≈2^139.5
+       guess: ≈2^135.9
+           β:      387
+           p:        5
+           ζ:        0
+           t:       50
+          β':      391
+           N: ≈2^81.1
+           m:      512
+
+=== ML-KEM-768 ===
+Primal:          rop: ≈2^204.9
+         red: ≈2^204.9
+           δ: 1.002902
+           β:      624
+           d:     1427
+         tag:     usvp
+Dual:          rop: ≈2^196.4
+         red: ≈2^196.4
+       guess: ≈2^185.8
+           β:      589
+           p:        4
+           ζ:       20
+           t:       60
+          β':      583
+           N: ≈2^119.8
+           m:      768
+
+=== ML-KEM-1024 ===
+Primal:          rop: ≈2^275.1
+         red: ≈2^275.1
+           δ: 1.002262
+           β:      874
+           d:     1867
+         tag:     usvp
+Dual:          rop: ≈2^262.3
+         red: ≈2^261.9
+       guess: ≈2^260.3
+           β:      823
+           p:        4
+           ζ:        0
+           t:      120
+          β':      804
+           N: ≈2^165.9
+           m:     1024

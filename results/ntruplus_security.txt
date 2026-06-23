@@ -1,0 +1,74 @@
+=== NTRU+ Security Analysis (lattice-estimator) ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+=== NTRU+576 ===
+Primal:          rop: ≈2^153.1
+         red: ≈2^153.1
+           δ: 1.003732
+           β:      439
+           d:     1094
+         tag:     usvp
+Dual:          rop: ≈2^147.3
+         red: ≈2^146.8
+       guess: ≈2^145.4
+           β:      413
+           p:        4
+           ζ:       20
+           t:       40
+          β':      415
+           N: ≈2^85.0
+           m:      576
+
+=== NTRU+768 ===
+Primal:          rop: ≈2^197.7
+         red: ≈2^197.7
+           δ: 1.002993
+           β:      598
+           d:     1423
+         tag:     usvp
+Dual:          rop: ≈2^189.2
+         red: ≈2^189.1
+       guess: ≈2^185.8
+           β:      563
+           p:        4
+           ζ:       20
+           t:       60
+          β':      558
+           N: ≈2^114.6
+           m:      768
+
+=== NTRU+864 ===
+Primal:          rop: ≈2^220.0
+         red: ≈2^220.0
+           δ: 1.002734
+           β:      677
+           d:     1639
+         tag:     usvp
+Dual:          rop: ≈2^210.2
+         red: ≈2^210.1
+       guess: ≈2^206.0
+           β:      638
+           p:        4
+           ζ:       20
+           t:       70
+          β':      629
+           N: ≈2^130.2
+           m:      864
+
+=== NTRU+1152 ===
+Primal:          rop: ≈2^287.7
+         red: ≈2^287.7
+           δ: 1.002180
+           β:      918
+           d:     2107
+         tag:     usvp
+Dual:          rop: ≈2^273.8
+         red: ≈2^273.7
+       guess: ≈2^269.6
+           β:      864
+           p:        4
+           ζ:       30
+           t:       90
+          β':      844
+           N: ≈2^174.2
+           m:     1152

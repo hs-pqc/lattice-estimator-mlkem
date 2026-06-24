@@ -180,23 +180,38 @@ lattice dimension and effective guessing dimension.
 
 1. **Mathematical proof of η^(1/3):**
    Prove that guessing cost in dual hybrid scales as σ^(2/3).
+   Direct verification shows LHS/RHS ≈ 2~3 (not 1), suggesting
+   the balance condition is more complex than BKZ_cost = Guess_cost.
 
 2. **Origin of C ≈ 0.597:**
-   Derive C analytically from BKZ cost model parameters.
+   0.597 ≈ 0.292 × 2.044. The factor 2.044 may relate to
+   repetition cost, sieving dimension, or memory cost in BKZ.
+   Deriving C analytically from the full cost function remains open.
 
 3. **η=1 anomaly:**
-   Formula 2 has larger errors for η=1 (sparse secrets).
-   This may require a separate analysis.
+   Formula 2 has larger errors for η=1 (max_err=5).
+   Empirically, ζ(η=1)/ζ(η=2) ≈ 1.38 consistently across n.
+   This ratio is larger than η^(1/3) predicts (2^(1/3) ≈ 1.26).
+   Conjecture: η=1 sparsity introduces an additional factor of (4/3)^(1/3).
 
 4. **Cost model independence:**
-   Verify if formulas hold under different cost models
-   (ADPS16, BKZ 2.0, quantum cost models).
+   All experiments use MATZOV cost model (default in lattice-estimator 0.1.0).
+   ADPS16, Kyber, and quantum cost models are not compatible
+   with dual_hybrid in this version. Verification under other
+   cost models remains open.
 
-5. **Connection to security margins:**
+5. **SMAUG-T analysis:**
+   SMAUG-T uses sparse secret (HWT distribution) with small h.
+   lattice-estimator 0.1.0 does not support SparseTernary(n, h)
+   for small h values. Separate analysis needed.
+
+6. **Connection to security margins:**
    How does ζ_optimal relate to actual security margins
-   in NIST PQC standards?
+   in NIST/KPQC PQC standards?
 
----
+7. **Generalization beyond CBD:**
+   All experiments use CenteredBinomial(η).
+   Does the formula extend to DiscreteGaussian or other distributions?
 
 ## 8. Experimental Data
 
@@ -219,3 +234,5 @@ Key files:
 4. NIST FIPS 203 (ML-KEM), 2024
 5. NIST FIPS 204 (ML-DSA), 2024
 6. lattice-estimator, github.com/malb/lattice-estimator
+7. Cheon et al., "HAETAE: Shorter Lattice-Based Fiat-Shamir Signatures", CHES 2024
+8. Cheon et al., "SMAUG-T: Post-Quantum KEM", KpqC 2025

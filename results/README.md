@@ -67,3 +67,23 @@ MATZOV cost model의 낙관적 추정 때문이었음.
 - [ ] sparse secret 분석 재실험 (dual_hybrid 직접 호출)
 - [ ] ζ ≈ 0.041 × n 관계 수식화
 - [ ] q/n 비율과 ζ 관계 분석
+## ζ 경험적 공식 (Empirical Formula)
+
+실험을 통해 도출한 ζ_optimal 경험적 공식:
+
+> **ζ_optimal ≈ 0.8 × n / (log2(q) × log2(η+1))**
+
+| 파일 | 내용 |
+|---|---|
+| zeta_qn.txt | 실제 표준 파라미터 ζ/n 비율 |
+| zeta_formula.txt | C 역산 결과 |
+
+**검증 결과:**
+- ML-KEM, NTRU+: C ≈ 0.74~0.91
+- ML-DSA: C ≈ 0.78~0.87
+- n이 커질수록 C가 0.8에 수렴
+
+**미해결 문제:**
+- C가 완전히 일정하지 않은 이유
+- 공식의 수학적 증명
+- η, q 외 다른 변수의 영향

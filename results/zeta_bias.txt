@@ -1,0 +1,31 @@
+=== 오차 편향 분석 ===
+공식: ζ ≈ (-0.076 + 0.701 × eta^0.2) × n / (log2(q) × log2(eta+1))
+Environment: SageMath + lattice-estimator 0.1.0
+
+ML-KEM-512:  actual=20, predicted=17, error=+3
+ML-KEM-768:  actual=32, predicted=30, error=+2
+ML-KEM-1024: actual=41, predicted=40, error=+1
+NTRU+576:    actual=25, predicted=22, error=+3
+NTRU+768:    actual=32, predicted=29, error=+3
+NTRU+864:    actual=34, predicted=32, error=+2
+NTRU+1152:   actual=43, predicted=41, error=+2
+ML-DSA-44:   actual=23, predicted=20, error=+3
+ML-DSA-65:   actual=25, predicted=24, error=+1
+ML-DSA-87:   actual=44, predicted=40, error=+4
+Custom-1:    actual=30, predicted=27, error=+3
+Custom-2:    actual=32, predicted=30, error=+2
+Custom-3:    actual=26, predicted=22, error=+4
+Custom-4:    actual=43, predicted=40, error=+3
+Custom-5:    actual=31, predicted=28, error=+3
+Custom-6:    actual=41, predicted=40, error=+1
+Custom-7:    actual=27, predicted=23, error=+4
+Custom-8:    actual=31, predicted=29, error=+2
+
+=== 오차 통계 ===
+평균 오차: 2.56
+양수 오차: 18개
+음수 오차: 0개
+제로 오차: 0개
+최소: +1, 최대: +4
+
+결론: 모든 오차가 양수. int() 버림으로 인한 체계적 편향.

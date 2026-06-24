@@ -1,0 +1,44 @@
+=== eta^(1/3) 최종 검증 (31개 파라미터셋) ===
+공식: ζ ≈ floor(0.597 × n / (log2(q) × eta^(1/3))) + 2
+Environment: SageMath + lattice-estimator 0.1.0
+
+ML-KEM-512:       actual=20, predicted=20, error=+0
+ML-KEM-768:       actual=32, predicted=33, error=-1
+ML-KEM-1024:      actual=41, predicted=43, error=-2
+NTRU+576:         actual=25, predicted=25, error=+0
+NTRU+768:         actual=32, predicted=31, error=+1
+NTRU+864:         actual=34, predicted=35, error=-1
+NTRU+1152:        actual=43, predicted=44, error=-1
+ML-DSA-44:        actual=23, predicted=23, error=+0
+ML-DSA-65:        actual=25, predicted=27, error=-2
+ML-DSA-87:        actual=44, predicted=44, error=+0
+Custom-1:         actual=30, predicted=30, error=+0
+Custom-2:         actual=32, predicted=33, error=-1
+Custom-3:         actual=26, predicted=25, error=+1
+Custom-4:         actual=43, predicted=44, error=-1
+Custom-5:         actual=31, predicted=31, error=+0
+Custom-6:         actual=41, predicted=43, error=-2
+Custom-7:         actual=27, predicted=26, error=+1
+Custom-8:         actual=31, predicted=32, error=-1
+eta1-512:         actual=32, predicted=28, error=+4
+eta1-768:         actual=44, predicted=41, error=+3
+eta1-1024:        actual=56, predicted=54, error=+2
+eta1-1536:        actual=82, predicted=80, error=+2
+eta1-512-7681:    actual=30, predicted=25, error=+5
+eta1-1024-7681:   actual=52, predicted=49, error=+3
+FHE-1024-2^32:    actual=19, predicted=17, error=+2
+FHE-2048-2^32:    actual=32, predicted=32, error=+0
+FHE-1024-2^60:    actual=9,  predicted=10, error=-1
+Small-q-1021:     actual=26, predicted=26, error=+0
+Small-q-2053:     actual=25, predicted=24, error=+1
+Large-eta-8:      actual=28, predicted=28, error=+0
+Large-eta-16:     actual=24, predicted=22, error=+2
+
+max_err=5, avg_err=1.29
+
+공식 비교:
+공식 1 (eta^0.2): max_err=3, avg_err=1.00 (복잡한 형태)
+공식 3 (eta^1/3): max_err=5, avg_err=1.29 (단순한 형태, 수학적 의미 있음)
+
+eta^(1/3) = sigma^(2/3) where sigma=sqrt(eta/2) (CBD 표준편차)
+수학적으로 유도 가능한 형태.

@@ -1,0 +1,7 @@
+=== n=512, η 변화에 따른 ζ 거동 (q=3329) ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+η=1: zeta=20, rop=120.9
+η=2: zeta=10, rop=132.8
+η=3: zeta=0, rop=139.7
+η=4: zeta=10, rop=144.9

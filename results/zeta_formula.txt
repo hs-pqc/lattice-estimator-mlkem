@@ -1,0 +1,17 @@
+=== C 역산: C = zeta × log2(q) × log2(η+1) / n ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+ML-KEM-512: zeta=20, C=0.9141
+ML-KEM-768: zeta=32, C=0.7727
+ML-KEM-1024: zeta=41, C=0.7425
+NTRU+576: zeta=25, C=0.8087
+NTRU+768: zeta=32, C=0.8040
+NTRU+864: zeta=34, C=0.7697
+NTRU+1152: zeta=43, C=0.7547
+ML-DSA-44: zeta=23, C=0.8187
+ML-DSA-65: zeta=25, C=0.8692
+ML-DSA-87: zeta=44, C=0.7831
+
+가설: ζ_optimal ≈ 0.8 × n / (log2(q) × log2(η+1))
+C의 범위: 0.74~0.91, 평균 ≈ 0.80
+n이 커질수록 C가 0.74~0.80으로 수렴하는 경향

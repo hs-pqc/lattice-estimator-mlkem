@@ -1,0 +1,16 @@
+=== n/log2(q) vs C (eta=2) ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+ML-KEM-512: n/log2(q)=43.8, C=0.8331
+ML-KEM-768: n/log2(q)=65.6, C=0.7727
+ML-KEM-1024: n/log2(q)=87.5, C=0.7425
+NTRU+576: n/log2(q)=49.0, C=0.8087
+NTRU+768: n/log2(q)=63.1, C=0.8040
+NTRU+864: n/log2(q)=70.0, C=0.7697
+NTRU+1152: n/log2(q)=90.3, C=0.7547
+ML-DSA-44: n/log2(q)=44.5, C=0.8187
+ML-DSA-87: n/log2(q)=89.0, C=0.7831
+
+관찰: n/log2(q)가 커질수록 C가 단조 감소.
+표준이 달라도 n/log2(q)가 비슷하면 C도 비슷함.
+→ ζ_optimal이 표준에 무관하게 n/log2(q)의 함수로 표현될 수 있음을 시사.

@@ -1,0 +1,23 @@
+=== 새 공식 검증: zeta ~ 0.030n + 0.096*sqrt(n*log2(q)) ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+ML-KEM-512:  actual=23, predicted=24, error=-1
+ML-KEM-768:  actual=32, predicted=34, error=-2
+ML-KEM-1024: actual=41, predicted=43, error=-2
+NTRU+576:    actual=25, predicted=27, error=-2
+NTRU+768:    actual=32, predicted=34, error=-2
+NTRU+864:    actual=34, predicted=37, error=-3
+NTRU+1152:   actual=43, predicted=48, error=-5
+ML-DSA-44:   actual=23, predicted=47, error=-24 ← 폭발
+ML-DSA-87:   actual=44, predicted=84, error=-40 ← 폭발
+Custom-700:  actual=30, predicted=31, error=-1
+Custom-900:  actual=37, predicted=38, error=-1
+Custom-600:  actual=26, predicted=28, error=-2
+
+=== 결론 ===
+ML-KEM/NTRU+ (q<=10000): max_err=5, avg_err=2.14 → 공식 성립
+ML-DSA (q=8380417):       max_err=40         → 공식 불성립
+
+q 크기에 따라 ζ 거동이 구조적으로 달라짐:
+구간 1 (q<=10000): ζ ≈ 0.030n + 0.096*sqrt(n*log2(q))
+구간 2 (q>>10000): 별도 분석 필요

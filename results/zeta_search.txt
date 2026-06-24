@@ -1,0 +1,11 @@
+=== ζ Search (q=3329, η=2, n=600~900) ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+n=600: zeta=20, rop=154.0
+n=650: zeta=10, rop=166.4
+n=700: zeta=20, rop=179.1
+n=750: zeta=20, rop=191.4
+n=768: zeta=20, rop=196.4
+n=800: zeta=10, rop=204.5
+n=850: zeta=30, rop=216.8
+n=900: zeta=20, rop=229.5

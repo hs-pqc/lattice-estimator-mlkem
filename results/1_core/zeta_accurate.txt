@@ -1,0 +1,25 @@
+=== 정확한 ζ 수치 비교 (LWE.dual_hybrid vs dual_hybrid 직접 호출) ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+tag                    LWE.dual ζ  direct ζ   LWE rop  direct rop
+ML-KEM-512                      0        20     139.7       145.5
+ML-KEM-768                     20        32     196.4       206.4
+ML-KEM-1024                     0        41     262.3       277.5
+NTRU+576                       20        25     147.3       153.9
+NTRU+768                       20        32     189.2       199.1
+NTRU+864                       20        34     210.2       221.8
+NTRU+1152                      30        43     273.8       290.2
+ML-DSA-44                      10        23     141.0       144.3
+ML-DSA-65                      20        25     226.4       233.9
+ML-DSA-87                      30        44     292.6       304.2
+
+핵심 발견:
+1. LWE.dual_hybrid는 ζ를 과소 추정
+   - ML-KEM-512: ζ=0 (잘못됨) → 실제 ζ=20
+   - ML-KEM-1024: ζ=0 (잘못됨) → 실제 ζ=41
+
+2. 보안 비트도 과소 추정
+   - ML-KEM-512: 139.7 → 145.5 (5.8비트 차이)
+   - ML-KEM-1024: 262.3 → 277.5 (15.2비트 차이)
+
+3. 정확한 분석을 위해 dual_hybrid 직접 호출 필수

@@ -87,3 +87,27 @@ MATZOV cost model의 낙관적 추정 때문이었음.
 - C가 완전히 일정하지 않은 이유
 - 공식의 수학적 증명
 - η, q 외 다른 변수의 영향
+## ζ 경험적 공식 추가 분석
+
+### n/log2(q) vs C 관계
+
+![C vs n/log2(q)](C_vs_nlogq.png)
+
+세 표준의 파라미터를 n/log2(q)로 정규화하면 C값이
+하나의 단조 감소 곡선으로 수렴함.
+
+| 파일 | 내용 |
+|---|---|
+| zeta_nlogq.txt | n/log2(q) vs C 데이터 |
+| zeta_eta1.txt | eta=1 구간 분석 |
+| zeta_C_eta.txt | C(eta) 선형 근사 검증 |
+| zeta_sqrt.txt | C/sqrt(eta) 패턴 분석 |
+| zeta_q_continuous.txt | q 연속 변화에 따른 C |
+| zeta_n_convergence.txt | n 증가에 따른 C 수렴 |
+| C_vs_nlogq.png | C vs n/log2(q) 그래프 |
+
+### 미해결 문제
+
+- C(η)의 정확한 함수 형태 (선형/로그/제곱근 근사 모두 불완전)
+- n/log2(q)와 C의 정확한 관계식 수식화
+- 공식의 수학적 증명

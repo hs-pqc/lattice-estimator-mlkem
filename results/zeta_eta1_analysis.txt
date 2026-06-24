@@ -1,0 +1,22 @@
+=== eta=1 구간 분석 ===
+공식: ζ ≈ (-0.076 + 0.701 × eta^0.2) × n / (log2(q) × log2(eta+1))
+Environment: SageMath + lattice-estimator 0.1.0
+
+n=512,  q=3329,  eta=1: actual=32, predicted=27, error=+5
+n=768,  q=3329,  eta=1: actual=44, predicted=41, error=+3
+n=1024, q=3329,  eta=1: actual=56, predicted=54, error=+2
+n=1536, q=3329,  eta=1: actual=82, predicted=82, error=+0
+n=512,  q=7681,  eta=1: actual=30, predicted=24, error=+6
+n=1024, q=7681,  eta=1: actual=52, predicted=49, error=+3
+n=512,  q=12289, eta=1: actual=29, predicted=23, error=+6
+n=1024, q=12289, eta=1: actual=50, predicted=47, error=+3
+
+max_err=6, avg_err=3.50
+
+비교:
+eta>=2: max_err=4, avg_err=2.53
+eta=1:  max_err=6, avg_err=3.50
+
+결론: eta=1도 동일 공식 적용 가능.
+n이 작을 때 오차 크고 n>=1024면 +-3 이내.
+완전히 다른 구간이 아님.

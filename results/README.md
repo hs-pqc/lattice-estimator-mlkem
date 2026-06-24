@@ -180,3 +180,42 @@ local_minimum binary search가 이 균형점을 수치적으로 탐색.
 | zeta_corrected.txt | 보정항 비교 (bias=+2 최적) |
 | zeta_final.txt | 최종 공식 블라인드 검증 |
 | zeta_extreme.txt | 극단적 파라미터 검증 |
+## 범용화 시도: q 구간별 공식
+
+### β와 ζ의 관계 분석
+
+| 파일 | 내용 |
+|---|---|
+| beta_fit2.txt | beta/n vs n/log2(q) 피팅 |
+| zeta_beta_fit.txt | zeta/beta vs n/log2(q) 피팅 |
+| zeta_direct_fit.txt | zeta/n 직접 피팅 |
+| zeta_new_formula.txt | 새 공식 검증 결과 |
+
+### 발견
+
+**β/n ≈ 0.512 + 0.035 × √(n/log2(q))**
+
+**ζ/β ≈ 0.018 + 0.276 / √(n/log2(q))**
+
+**ζ/n ≈ 0.030 + 0.096 / √(n/log2(q))**
+
+즉: **ζ ≈ 0.030n + 0.096 × √(n × log2(q))**
+
+### q 구간별 공식 분리
+
+| 구간 | 표준 | 공식 | 정확도 |
+|---|---|---|---|
+| q ≤ 10000 | ML-KEM, NTRU+ | ζ ≈ 0.030n + 0.096√(n×log2(q)) | max_err=5 |
+| q >> 10000 | ML-DSA | 별도 분석 필요 | — |
+
+### 핵심 관찰
+
+q 크기에 따라 ζ 거동이 구조적으로 달라짐.
+ML-KEM/NTRU+와 ML-DSA를 하나의 공식으로 통합 불가.
+이는 q/n 비율의 차이에서 기인할 가능성 있음.
+
+### 미해결 문제
+
+- ML-DSA(대형 q) 구간의 별도 공식 도출
+- 두 구간을 통합하는 일반화된 공식
+-

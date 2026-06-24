@@ -1,0 +1,166 @@
+=== ML-KEM, ML-DSA, NTRU+ Security Analysis (Revised) ===
+Environment: SageMath + lattice-estimator 0.1.0
+Method: dual_hybrid direct call (more accurate than LWE.dual_hybrid)
+
+=== ML-KEM ===
+ML-KEM-512
+Primal:          rop: ≈2^143.8
+         red: ≈2^143.8
+           δ: 1.003941
+           β:      406
+           d:      998
+         tag:     usvp
+Dual:          rop: ≈2^145.5
+         mem: ≈2^140.5
+           m:      517
+           β:      408
+           d:     1009
+           ↻:        1
+           ζ:       20
+         tag: dual_hybrid
+
+ML-KEM-768
+Primal:          rop: ≈2^204.9
+         red: ≈2^204.9
+           δ: 1.002902
+           β:      624
+           d:     1427
+         tag:     usvp
+Dual:          rop: ≈2^206.4
+         mem: ≈2^201.9
+           m:      701
+           β:      625
+           d:     1437
+           ↻:        1
+           ζ:       32
+         tag: dual_hybrid
+
+ML-KEM-1024
+Primal:          rop: ≈2^275.1
+         red: ≈2^275.1
+           δ: 1.002262
+           β:      874
+           d:     1867
+         tag:     usvp
+Dual:          rop: ≈2^277.5
+         mem: ≈2^272.6
+           m:      900
+           β:      879
+           d:     1883
+           ↻:        1
+           ζ:       41
+         tag: dual_hybrid
+
+=== ML-DSA ===
+ML-DSA-44
+Primal:          rop: ≈2^143.5
+         red: ≈2^143.5
+           δ: 1.003982
+           β:      400
+           d:     1982
+         tag:     usvp
+Dual:          rop: ≈2^144.3
+         mem: ≈2^137.2
+           m:     1002
+           β:      399
+           d:     2003
+           ↻:        1
+           ζ:       23
+         tag: dual_hybrid
+
+ML-DSA-65
+Primal:          rop: ≈2^231.3
+         red: ≈2^231.3
+           δ: 1.002632
+           β:      713
+           d:     2971
+         tag:     usvp
+Dual:          rop: ≈2^233.9
+         mem: ≈2^225.9
+           m:     1526
+           β:      719
+           d:     3037
+           ↻:        1
+           ζ:       25
+         tag: dual_hybrid
+
+ML-DSA-87
+Primal:          rop: ≈2^302.4
+         red: ≈2^302.4
+           δ: 1.002097
+           β:      966
+           d:     3849
+         tag:     usvp
+Dual:          rop: ≈2^304.2
+         mem: ≈2^298.4
+           m:     1904
+           β:      968
+           d:     3908
+           ↻:        1
+           ζ:       44
+         tag: dual_hybrid
+
+=== NTRU+ ===
+NTRU+576
+Primal:          rop: ≈2^153.1
+         red: ≈2^153.1
+           δ: 1.003732
+           β:      439
+           d:     1094
+         tag:     usvp
+Dual:          rop: ≈2^153.9
+         mem: ≈2^148.8
+           m:      546
+           β:      438
+           d:     1097
+           ↻:        1
+           ζ:       25
+         tag: dual_hybrid
+
+NTRU+768
+Primal:          rop: ≈2^197.7
+         red: ≈2^197.7
+           δ: 1.002993
+           β:      598
+           d:     1423
+         tag:     usvp
+Dual:          rop: ≈2^199.1
+         mem: ≈2^195.8
+           m:      706
+           β:      598
+           d:     1442
+           ↻:        1
+           ζ:       32
+         tag: dual_hybrid
+
+NTRU+864
+Primal:          rop: ≈2^220.0
+         red: ≈2^220.0
+           δ: 1.002734
+           β:      677
+           d:     1639
+         tag:     usvp
+Dual:          rop: ≈2^221.8
+         mem: ≈2^216.8
+           m:      786
+           β:      680
+           d:     1616
+           ↻:        1
+           ζ:       34
+         tag: dual_hybrid
+
+NTRU+1152
+Primal:          rop: ≈2^287.7
+         red: ≈2^287.7
+           δ: 1.002180
+           β:      918
+           d:     2107
+         tag:     usvp
+Dual:          rop: ≈2^290.2
+         mem: ≈2^285.3
+           m:     1018
+           β:      923
+           d:     2127
+           ↻:        1
+           ζ:       43
+         tag: dual_hybrid

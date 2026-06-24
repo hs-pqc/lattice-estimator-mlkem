@@ -1,0 +1,22 @@
+=== C(eta) 지수 α 탐색 (n=1536, q=3329) ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+eta=1: C=0.6247
+eta=2: C=0.7244
+eta=3: C=0.8075
+eta=4: C=0.8490
+eta=5: C=0.8861
+eta=6: C=0.9196
+eta=7: C=0.9598
+eta=8: C=0.9901
+
+=== 지수 α 탐색 결과 ===
+alpha=0.1: a=-0.9480, b=1.5672, max_err=0.0086, avg_err=0.0061
+alpha=0.2: a=-0.0758, b=0.7006, max_err=0.0105, avg_err=0.0041 ← 최적
+alpha=0.3: a=0.2150, b=0.4157, max_err=0.0146, avg_err=0.0046
+alpha=0.4: a=0.3605, b=0.2761, max_err=0.0184, avg_err=0.0065
+alpha=0.5: a=0.4481, b=0.1948, max_err=0.0220, avg_err=0.0091
+alpha=0.6: a=0.5066, b=0.1426, max_err=0.0253, avg_err=0.0118
+alpha=0.7: a=0.5486, b=0.1069, max_err=0.0308, avg_err=0.0142
+
+결론: C(eta) ≈ -0.076 + 0.701 × eta^0.2 (alpha=0.2일 때 최적)

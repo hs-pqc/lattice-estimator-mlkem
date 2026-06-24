@@ -8,6 +8,30 @@
 
 ## Abstract
 
+## Key Finding
+
+**Primal attack is more efficient than dual hybrid across all standard parameters.**
+
+Initial experiments using `LWE.dual_hybrid` (MATZOV cost model) suggested
+dual hybrid outperforms primal. However, re-experiments using `dual_hybrid`
+direct call (more accurate) show the opposite:
+
+| Standard | Primal (bits) | Dual (bits) | Primal advantage |
+|---|---|---|---|
+| ML-KEM-512 | 143.8 | 145.5 | +1.7 |
+| ML-KEM-768 | 204.9 | 206.4 | +1.5 |
+| ML-KEM-1024 | 275.1 | 277.5 | +2.4 |
+| ML-DSA-44 | 143.5 | 144.3 | +0.8 |
+| NTRU+768 | 197.7 | 199.1 | +1.4 |
+| HAETAE-2 | 102.5 | 102.9 | +0.4 |
+
+**HAETAE-2 has the smallest gap (+0.4 bits)** — dual hybrid is closest
+to primal efficiency at small n with large q.
+
+This finding has implications for security analysis:
+- Security estimates using `LWE.dual_hybrid` may be overly optimistic
+- Primal attack should be the primary security metric for these standards
+- The gap between cost models grows with n
 We empirically analyze the optimal splitting dimension ζ in dual hybrid attacks
 on LWE-based cryptographic schemes. Through systematic experiments using
 lattice-estimator across ML-KEM, ML-DSA, and NTRU+ parameter sets, we discover

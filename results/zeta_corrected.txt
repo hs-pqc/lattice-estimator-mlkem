@@ -1,0 +1,9 @@
+=== 보정항 추가 비교 ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+bias=+0: max_err=4, avg_err=2.40
+bias=+1: max_err=3, avg_err=1.40
+bias=+2: max_err=2, avg_err=0.80
+bias=+3: max_err=2, avg_err=0.80
+
+결론: bias=+2일 때 최적. avg_err=0.80.

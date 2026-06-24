@@ -1,0 +1,22 @@
+=== ζ/n 직접 피팅 (eta=2, ML-DSA 제외) ===
+Environment: SageMath + lattice-estimator 0.1.0
+
+n/log2q=43.8,  zeta/n=0.0449
+n/log2q=65.6,  zeta/n=0.0417
+n/log2q=87.5,  zeta/n=0.0400
+n/log2q=109.4, zeta/n=0.0398
+n/log2q=131.3, zeta/n=0.0391
+n/log2q=49.0,  zeta/n=0.0434
+n/log2q=63.1,  zeta/n=0.0417
+n/log2q=70.0,  zeta/n=0.0394
+n/log2q=90.3,  zeta/n=0.0373
+
+=== ζ/n 피팅 결과 ===
+alpha=-0.5: zeta/n ~ 0.0296 + 0.0955*(n/log2q)^-0.5, avg_err=0.00088 ← 최적
+alpha=-0.4: zeta/n ~ 0.0269 + 0.0774*(n/log2q)^-0.4, avg_err=0.00089
+alpha=-0.3: zeta/n ~ 0.0224 + 0.0668*(n/log2q)^-0.3, avg_err=0.00090
+alpha=-0.2: zeta/n ~ 0.0134 + 0.0648*(n/log2q)^-0.2, avg_err=0.00092
+alpha=-0.1: zeta/n ~ -0.0135 + 0.0836*(n/log2q)^-0.1, avg_err=0.00093
+
+결론: ζ/n ≈ 0.030 + 0.096/sqrt(n/log2(q))
+즉:  ζ ≈ 0.030n + 0.096*sqrt(n*log2(q))

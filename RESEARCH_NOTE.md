@@ -10,47 +10,44 @@
 
 ## Key Finding
 
-**Primal attack is more efficient than dual hybrid across all standard parameters.**
+### 1. Cost Model Comparison: LWE.dual_hybrid vs dual_hybrid direct call
 
-Initial experiments using `LWE.dual_hybrid` (MATZOV cost model) suggested
-dual hybrid outperforms primal. However, re-experiments using `dual_hybrid`
-direct call (more accurate) show the opposite:
+Two methods give different results due to different underlying assumptions:
+
+| Method | Model | ζ (ML-KEM-512) | rop (ML-KEM-512) |
+|---|---|---|---|
+| LWE.dual_hybrid | MATZOV (official standard) | 0 | 139.7 bits |
+| dual_hybrid direct | Conservative model | 20 | 145.5 bits |
+
+**LWE.dual_hybrid (MATZOV)** is the standard used in official security
+analyses (CRYPTREC, NIST submissions, MATZOV report).
+It gives lower security estimates — conservative and safe for parameter design.
+
+**dual_hybrid direct call** uses a different cost model that finds
+larger ζ values and gives higher security estimates.
+
+Neither is "wrong" — they reflect different assumptions about attack costs.
+
+### 2. Primal vs Dual under conservative cost model
+
+Under dual_hybrid direct call, primal attack is more efficient
+than dual hybrid across all standard parameters:
 
 | Standard | Primal (bits) | Dual (bits) | Primal advantage |
 |---|---|---|---|
 | ML-KEM-512 | 143.8 | 145.5 | +1.7 |
 | ML-KEM-768 | 204.9 | 206.4 | +1.5 |
 | ML-KEM-1024 | 275.1 | 277.5 | +2.4 |
-| ML-DSA-44 | 143.5 | 144.3 | +0.8 |
-| NTRU+768 | 197.7 | 199.1 | +1.4 |
 | HAETAE-2 | 102.5 | 102.9 | +0.4 |
 
-**HAETAE-2 has the smallest gap (+0.4 bits)** — dual hybrid is closest
-to primal efficiency at small n with large q.
+HAETAE-2 has the smallest gap — dual hybrid is closest to primal
+at small n with large q.
 
-This finding has implications for security analysis:
-- Security estimates using `LWE.dual_hybrid` may be overly optimistic
-- Primal attack should be the primary security metric for these standards
-- The gap between cost models grows with n
-We empirically analyze the optimal splitting dimension ζ in dual hybrid attacks
-on LWE-based cryptographic schemes. Through systematic experiments using
-lattice-estimator across ML-KEM, ML-DSA, and NTRU+ parameter sets, we discover
-that ζ_optimal follows a predictable pattern as a function of lattice dimension n,
-modulus q, and secret distribution parameter η.
+### 3. ζ_optimal empirical formula
 
-We propose two empirical formulas:
-
-**Formula 1 (Practical):**
-> ζ ≈ floor((-0.076 + 0.701 × η^0.2) × n / (log2(q) × log2(η+1))) + 2
-
-**Formula 2 (Mathematically Motivated):**
-> ζ ≈ floor(0.597 × n / (log2(q) × η^(1/3))) + 2
-
-Both formulas are validated across 42 parameter sets with max_err ≤ 5.
-The second formula suggests a connection to σ^(2/3) where σ = √(η/2)
-is the standard deviation of the CenteredBinomial distribution.
-
----
+Despite cost model differences, ζ_optimal follows a predictable
+pattern — suggesting the formula reflects an intrinsic structure
+of the dual hybrid optimization landscape, independent of cost model choice.
 
 ## 1. Introduction
 
@@ -98,7 +95,7 @@ Uses local_minimum binary search to find optimal (β, ζ) numerically.
 
 **Key finding:** We use `dual_hybrid` direct call (not `LWE.dual_hybrid`)
 for accurate results. `LWE.dual_hybrid` uses MATZOV cost model which
-gives overly optimistic estimates.
+gives estimates consistent with the official MATZOV security analysis.
 
 ---
 

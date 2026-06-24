@@ -1,0 +1,24 @@
+=== 최종 공식 검증 (확장 파라미터셋) ===
+ζ ≈ (-0.076 + 0.701 × eta^0.2) × n / (log2(q) × log2(eta+1))
+Environment: SageMath + lattice-estimator 0.1.0
+
+ML-KEM-512:       actual=20, predicted=17, error=+3
+ML-KEM-768:       actual=32, predicted=30, error=+2
+ML-KEM-1024:      actual=41, predicted=40, error=+1
+NTRU+576:         actual=25, predicted=22, error=+3
+NTRU+768:         actual=32, predicted=29, error=+3
+NTRU+864:         actual=34, predicted=32, error=+2
+NTRU+1152:        actual=43, predicted=41, error=+2
+ML-DSA-44:        actual=23, predicted=20, error=+3
+ML-DSA-65:        actual=25, predicted=24, error=+1
+ML-DSA-87:        actual=44, predicted=40, error=+4
+Custom-640:       actual=27, predicted=24, error=+3
+Custom-960:       actual=38, predicted=36, error=+2
+Custom-1280:      actual=50, predicted=49, error=+1
+Custom-512-7681:  actual=22, predicted=18, error=+4
+Custom-1024-7681: actual=38, predicted=36, error=+2
+Custom-512-12289: actual=21, predicted=17, error=+4
+Custom-1024-12289:actual=37, predicted=34, error=+3
+
+max_err=4, avg_err=2.53
+결론: 17개 파라미터셋 전부 ±4 이내. 표준/임의 파라미터 모두 성립.

@@ -1,0 +1,20 @@
+=== FFT 구현 가능성에 따른 ML-KEM 보안 비트 변화 ===
+FFT 가능  → MATZOV (LWE.dual_hybrid)
+FFT 불가  → direct call (dual_hybrid)
+Environment: SageMath + lattice-estimator 0.1.0
+
+파라미터        목표   FFT시(bits)  noFFT(bits)   차이    마진변화
+ML-KEM-512      128       139.7        145.5      5.9   11.7→17.5
+ML-KEM-768      192       196.4        206.4     10.0    4.4→14.4
+ML-KEM-1024     256       262.3        277.5     15.2    6.3→21.5
+
+핵심 주장:
+ML-KEM-768의 실질적 보안은 FFT distinguisher의 현실적
+구현 가능성에 달려있다.
+
+FFT 현실적  → 마진 4.4비트  → 취약
+FFT 비현실적 → 마진 14.4비트 → 안전
+
+ML-KEM-768 보안 마진의 불확실성이 세 파라미터셋 중 가장 크다 (10비트 차이).
+FFT distinguisher의 실제 구현 비용을 정확하게 평가하는 것이
+ML-KEM-768 보안 분석의 핵심이다.

@@ -1,0 +1,17 @@
+=== ML-KEM 전체 hint 임계점 비교 ===
+Environment: SageMath + lattice-estimator 0.1.0
+모델: LWE.dual_hybrid (MATZOV)
+
+ML-KEM-512:  기본=139.7비트, 마진=11.7비트, 임계점=hint 44개
+ML-KEM-768:  기본=196.4비트, 마진=4.4비트,  임계점=hint 16개
+ML-KEM-1024: 기본=262.3비트, 마진=6.3비트,  임계점=hint 21개
+
+핵심 발견:
+ML-KEM-768이 세 파라미터셋 중 마진이 가장 작음 (4.4비트)
+hint 16개만으로 NIST Level 3 보안(192비트) 아래로 떨어짐
+
+ML-KEM-512는 마진 11.7비트로 hint 44개 필요
+ML-KEM-1024는 마진 6.3비트로 hint 21개 필요
+
+주의: n-h 근사 모델 사용 (실제 approximate hints 효과와 다를 수 있음)
+정확한 분석은 DBDD 프레임워크 필요 (이창민 교수님 S&P 2026 참고)

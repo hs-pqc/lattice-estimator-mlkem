@@ -270,6 +270,9 @@ Early results using LWE.dual_hybrid (MATZOV) — kept for reference.
 6. lattice-estimator, github.com/malb/lattice-estimator
 7. Cheon et al., "HAETAE: Shorter Lattice-Based Fiat-Shamir Signatures", CHES 2024
 8. Cheon et al., "SMAUG-T: Post-Quantum KEM", KpqC 2025
+9. Lee et al., "From Perfect to Approximate Hints", S&P 2026
+10. Lee et al., "SQIsign with Fixed-Precision Arithmetic", PKC 2026
+
 ## 10. Connection to Approximate Hints
 
 ### Motivation

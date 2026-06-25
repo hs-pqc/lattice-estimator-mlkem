@@ -292,6 +292,35 @@ This is a rough model; accurate analysis requires DBDD framework.
 | ML-KEM-768 | 196.4 bits | **4.4 bits** | **~16 hints** |
 | ML-KEM-1024 | 262.3 bits | 6.3 bits | ~21 hints |
 
+## 11. FFT Distinguisher and Security Margin Uncertainty
+
+### Key Claim
+
+The practical security of ML-KEM-768 critically depends on whether
+the FFT distinguisher (MATZOV) is realistically implementable.
+
+| Parameter | Target | FFT available | FFT unavailable | Uncertainty |
+|---|---|---|---|---|
+| ML-KEM-512 | 128 bits | 11.7 bits | 17.5 bits | 5.9 bits |
+| ML-KEM-768 | 192 bits | **4.4 bits** | 14.4 bits | **10.0 bits** |
+| ML-KEM-1024 | 256 bits | 6.3 bits | 21.5 bits | 15.2 bits |
+
+### Interpretation
+
+- If FFT is realistic → ML-KEM-768 margin is only 4.4 bits (most vulnerable)
+- If FFT is unrealistic → ML-KEM-768 margin is 14.4 bits (safe)
+- ML-KEM-768 has the largest security uncertainty (10 bits) among all three
+
+### Open Question
+
+What is the realistic implementation cost of the FFT distinguisher?
+This single question determines whether ML-KEM-768 is the weakest
+or the middle parameter set among the three ML-KEM variants.
+
+Combined with approximate hints (Section 10), if FFT is realistic
+and 16 hints are obtainable, ML-KEM-768 NIST Level 3 security
+may be at risk.
+
 ### Key Finding
 
 **ML-KEM-768 has the smallest margin (4.4 bits) among all three

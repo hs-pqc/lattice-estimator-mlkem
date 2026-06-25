@@ -257,3 +257,36 @@ Key files:
 6. lattice-estimator, github.com/malb/lattice-estimator
 7. Cheon et al., "HAETAE: Shorter Lattice-Based Fiat-Shamir Signatures", CHES 2024
 8. Cheon et al., "SMAUG-T: Post-Quantum KEM", KpqC 2025
+## 10. Connection to Approximate Hints
+
+### Motivation
+
+If FFT distinguisher (MATZOV) is realistic, ML-KEM-512 has only
+11.7-bit security margin above 128 bits. Combined with approximate
+hints (Lee et al., S&P 2026), this margin may shrink further.
+
+### Experiment: hint threshold analysis
+
+We approximate hint effects by reducing effective dimension n → n-h.
+This is a rough model; accurate analysis requires DBDD framework.
+
+| Parameter | Base security | Margin | Threshold |
+|---|---|---|---|
+| ML-KEM-512 | 139.7 bits | 11.7 bits | ~44 hints |
+| ML-KEM-768 | 196.4 bits | **4.4 bits** | **~16 hints** |
+| ML-KEM-1024 | 262.3 bits | 6.3 bits | ~21 hints |
+
+### Key Finding
+
+**ML-KEM-768 has the smallest margin (4.4 bits) among all three
+parameter sets.** Only ~16 approximate hints are needed to break
+NIST Level 3 security (192 bits).
+
+### Open Question
+
+Can an attacker realistically obtain 16 approximate hints against
+ML-KEM-768 in practice? If so, NIST Level 3 security may be
+at risk under MATZOV + approximate hints combined attack.
+
+This connects directly to Lee et al. S&P 2026 which analyzes
+the cost reduction from approximate vs perfect hints.

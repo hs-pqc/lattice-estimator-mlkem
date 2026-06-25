@@ -109,13 +109,32 @@ across all three standards:
 | ML-DSA-65 | 231.3 | 233.9 |
 | NTRU+768 | 197.7 | 199.1 |
 
-### 4.2 ζ scales with n/log2(q)
+### 4.2 Cost Model Comparison: ζ values
+
+Two cost models give significantly different ζ values:
+
+| Parameter | LWE.dual_hybrid (MATZOV) | dual_hybrid direct | Difference |
+|---|---|---|---|
+| ML-KEM-512 | 0 | 20 | +20 |
+| ML-KEM-768 | 20 | 32 | +12 |
+| ML-KEM-1024 | 0 | 41 | +41 |
+| ML-DSA-44 | 10 | 23 | +13 |
+| ML-DSA-65 | 20 | 25 | +5 |
+| ML-DSA-87 | 30 | 44 | +14 |
+| NTRU+576 | 20 | 25 | +5 |
+| NTRU+1152 | 30 | 43 | +13 |
+
+MATZOV uses FFT distinguisher which makes ζ=0 optimal for some parameters.
+dual_hybrid direct call finds larger ζ values without FFT assumption.
+ML-KEM-512 and ML-KEM-1024 show ζ=0 under MATZOV — meaning no dimension
+reduction is optimal when FFT is available.
+### 4.3 ζ scales with n/log2(q)
 
 ζ/n ≈ 0.030 + 0.096/√(n/log2(q))
 
 This suggests ζ ≈ 0.030n + 0.096√(n × log2(q)) for small q.
 
-### 4.3 C(η) follows η^(1/3)
+### 4.4 C(η) follows η^(1/3)
 
 When normalizing ζ × log2(q) / n, the resulting constant C varies
 with η following approximately η^(1/3):

@@ -240,14 +240,25 @@ lattice dimension and effective guessing dimension.
 
 All experimental results are in the `results/` directory.
 
-Key files:
-- `all_security_revised.txt`: Primal/dual comparison
-- `zeta_verify3.txt`: Formula 1 validation (17 parameter sets)
-- `zeta_final.txt`: Formula 1 blind test
-- `zeta_cube_verify.txt`: Formula 2 validation (31 parameter sets)
-- `C_vs_nlogq.png`: C vs n/log2(q) visualization
+### Core results (`results/1_core/`)
 
----
+| File | Content |
+|---|---|
+| `all_security_revised.txt` | Primal/dual comparison (all standards) |
+| `zeta_accurate.txt` | MATZOV vs direct call ζ comparison |
+| `zeta_final.txt` | Formula 1 blind test |
+| `zeta_verify3.txt` | Formula 1 validation (17 parameter sets) |
+| `zeta_cube_verify.txt` | Formula 2 validation (31 parameter sets) |
+| `kpqc_test.txt` | HAETAE validation |
+| `hints_threshold.txt` | ML-KEM-512 hint threshold analysis |
+| `hints_all.txt` | ML-KEM hint threshold comparison |
+| `C_vs_nlogq.png` | C vs n/log2(q) visualization |
+
+### Analysis (`results/2_analysis/`)
+Intermediate experiments and fitting results.
+
+### Deprecated (`results/3_deprecated/`)
+Early results using LWE.dual_hybrid (MATZOV) — kept for reference.
 
 ## 9. References
 

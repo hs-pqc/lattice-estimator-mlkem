@@ -8,46 +8,29 @@
 
 ## Abstract
 
-## Key Finding
+We empirically analyze the optimal splitting dimension ζ in dual hybrid
+attacks on LWE-based cryptographic schemes. Through systematic experiments
+using lattice-estimator across ML-KEM, ML-DSA, NTRU+, and HAETAE parameter
+sets, we discover that ζ_optimal follows a predictable pattern as a function
+of lattice dimension n, modulus q, and secret distribution parameter η.
 
-### 1. Cost Model Comparison: LWE.dual_hybrid vs dual_hybrid direct call
+We propose two empirical formulas:
 
-Two methods give different results due to different underlying assumptions:
+**Formula 1 (Practical):**
+> ζ ≈ floor((-0.076 + 0.701 × η^0.2) × n / (log2(q) × log2(η+1))) + 2
 
-| Method | Model | ζ (ML-KEM-512) | rop (ML-KEM-512) |
-|---|---|---|---|
-| LWE.dual_hybrid | MATZOV (official standard) | 0 | 139.7 bits |
-| dual_hybrid direct | Conservative model | 20 | 145.5 bits |
+**Formula 2 (Mathematically Motivated):**
+> ζ ≈ floor(0.597 × n / (log2(q) × η^(1/3))) + 2
 
-**LWE.dual_hybrid (MATZOV)** is the standard used in official security
-analyses (CRYPTREC, NIST submissions, MATZOV report).
-It gives lower security estimates — conservative and safe for parameter design.
+Both formulas are validated across 42 parameter sets with max_err ≤ 5.
+The second formula suggests a connection to σ^(2/3) where σ = √(η/2)
+is the standard deviation of the CenteredBinomial distribution.
 
-**dual_hybrid direct call** uses a different cost model that finds
-larger ζ values and gives higher security estimates.
-
-Neither is "wrong" — they reflect different assumptions about attack costs.
-
-### 2. Primal vs Dual under conservative cost model
-
-Under dual_hybrid direct call, primal attack is more efficient
-than dual hybrid across all standard parameters:
-
-| Standard | Primal (bits) | Dual (bits) | Primal advantage |
-|---|---|---|---|
-| ML-KEM-512 | 143.8 | 145.5 | +1.7 |
-| ML-KEM-768 | 204.9 | 206.4 | +1.5 |
-| ML-KEM-1024 | 275.1 | 277.5 | +2.4 |
-| HAETAE-2 | 102.5 | 102.9 | +0.4 |
-
-HAETAE-2 has the smallest gap — dual hybrid is closest to primal
-at small n with large q.
-
-### 3. ζ_optimal empirical formula
-
-Despite cost model differences, ζ_optimal follows a predictable
-pattern — suggesting the formula reflects an intrinsic structure
-of the dual hybrid optimization landscape, independent of cost model choice.
+Additionally, we find that ML-KEM-768 has the smallest security margin
+(4.4 bits above NIST Level 3) among all three ML-KEM parameter sets
+under MATZOV cost model. Combined with approximate hints (Lee et al.,
+S&P 2026), only ~16 hints are needed to break 192-bit security,
+raising questions about the practical security of ML-KEM-768.
 
 ## 1. Introduction
 

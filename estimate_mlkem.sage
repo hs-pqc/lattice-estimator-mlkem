@@ -1,9 +1,13 @@
 # estimate_mlkem.sage
 # ML-KEM security analysis using lattice-estimator
 # Usage: sage estimate_mlkem.sage
+#
+# See RESEARCH_NOTE.md Appendix (2026-07) for the full derivation behind
+# Sections 4-6 below (MATZOV zeta/t grid resolution mechanism).
 
 from estimator import *
 from estimator.nd import CenteredBinomial
+from estimator.lwe_dual import matzov, dual_hybrid, early_abort_range, local_minimum, max_beta_global, red_cost_model_default
 import sys
 
 # ── 파라미터 정의 ──────────────────────────────────────────
@@ -47,6 +51,25 @@ def extract_cost(result):
     except Exception:
         return None, None
 
+def cost_for_fixed_zeta_matzov(k_enum_val, params, red_cost_model=red_cost_model_default):
+    """MATZOV cost model에서 zeta를 고정하고 p, t(k_fft), beta를 재최적화.
+    early_abort_range의 그리디 조기종료를 우회해 특정 zeta 지점의
+    실제 비용을 정확히 계산한다. (RESEARCH_NOTE.md Appendix Experiment 2/5 참고)
+    """
+    for p in early_abort_range(2, params.q):
+        for k_fft in early_abort_range(0, params.n - k_enum_val, 10):
+            precision = 1
+            max_beta = max(min(params.m - k_enum_val - k_fft[0], max_beta_global), 40 + precision)
+            with local_minimum(40, max_beta, precision=precision) as it:
+                for beta in it:
+                    cost = matzov.cost(beta, params, p=p[0], k_enum=k_enum_val, k_fft=k_fft[0], red_cost_model=red_cost_model)
+                    it.update(cost)
+                k_fft[1].update(it.y)
+        p[1].update(k_fft[1].y)
+        if p[1].y["t"] == 0 and p[0] > 2:
+            break
+    return p[1].y
+
 # ── 1. Primal Attack (usvp) ────────────────────────────────
 
 print_section("1. Primal Attack (usvp)")
@@ -62,9 +85,11 @@ for params in PARAM_SETS:
     except Exception as e:
         print(f"{params.tag:<15} ERROR: {e}")
 
-# ── 2. Dual Hybrid Attack ──────────────────────────────────
+# ── 2. Dual Hybrid Attack (MATZOV, official API) ───────────
 
-print_section("2. Dual Hybrid Attack")
+print_section("2. Dual Hybrid Attack (LWE.dual_hybrid / MATZOV)")
+print("NOTE: subject to the grid-resolution artifact documented in")
+print("RESEARCH_NOTE.md Appendix. See Section 4 below for the corrected values.")
 print(f"{'Parameter':<15} {'Security(bits)':<18} {'β':<8} {'p':<6} {'ζ':<6}")
 print("-" * 55)
 
@@ -107,21 +132,44 @@ for h in hamming_weights:
     except Exception as e:
         print(f"h={h:<10} ERROR: {e}")
 
-# ── 4. ζ anomaly 분석 (ML-KEM-768) ────────────────────────
+# ── 4. ζ 전수조사로 실제 최적값 계산 (MATZOV) ──────────────
+# 이전 버전은 "marker = optimal if zeta_val == 20"으로 하드코딩되어
+# 있었음 — 실제 최솟값을 계산한 게 아니라 가정을 표시만 한 것이었음.
+# RESEARCH_NOTE.md Appendix Experiment 2에서 이게 부정확함을 확인
+# (실제 최적은 ζ=24, 196.133bits, 기본 출력 ζ=20과 0.23bit 차이).
+# 아래는 각 파라미터셋에 대해 실제로 argmin을 계산한다.
 
-print_section("4. ML-KEM-768 ζ anomaly 상세 분석")
-print("dual hybrid cost around ζ=20")
-print(f"{'ζ':<8} {'Security(bits)':<18} {'β':<8}")
-print("-" * 36)
+print_section("4. ζ 전수조사 — MATZOV 실제 최적값 (하드코딩 마커 제거)")
 
-for zeta_val in [0, 5, 10, 15, 20, 25, 30]:
-    try:
-        result = LWE.dual_hybrid(MLKEM_768, zeta=zeta_val)
-        bits, beta = extract_cost(result)
-        marker = " ← optimal" if zeta_val == 20 else ""
-        if bits:
-            print(f"ζ={zeta_val:<6} {bits:<18.1f} {beta:<8}{marker}")
-    except Exception as e:
-        print(f"ζ={zeta_val:<6} ERROR: {e}")
+zeta_scan_ranges = {
+    "ML-KEM-512": (0, 60, 2),
+    "ML-KEM-768": (0, 40, 2),
+    "ML-KEM-1024": (0, 60, 2),
+}
 
-print("\n완료.")
+for params in PARAM_SETS:
+    zmin, zmax, zstep = zeta_scan_ranges[params.tag]
+    print(f"\n--- {params.tag} (zeta={zmin}..{zmax}, step={zstep}) ---")
+    print(f"{'ζ':<8} {'Security(bits)':<18} {'β':<8} {'p':<6} {'t':<6}")
+    print("-" * 46)
+    normalized = params.normalize()
+    results = []
+    default_result = LWE.dual_hybrid(params)
+    default_zeta = int(default_result.get("zeta", 0))
+    for zeta_val in range(zmin, zmax + 1, zstep):
+        try:
+            r = cost_for_fixed_zeta_matzov(zeta_val, normalized)
+            log2rop = float(log(r["rop"], 2).n())
+            results.append((zeta_val, log2rop, r))
+        except Exception as e:
+            print(f"ζ={zeta_val:<6} ERROR: {e}")
+    if results:
+        best_zeta, best_bits, best_r = min(results, key=lambda x: x[1])
+        for zeta_val, bits, r in results:
+            marker = " ← true optimum" if zeta_val == best_zeta else ""
+            marker += " (default output)" if zeta_val == default_zeta else ""
+            print(f"ζ={zeta_val:<6} {bits:<18.3f} {int(r['beta']):<8} {int(r.get('p',0)):<6} {int(r.get('t',0)):<6}{marker}")
+        print(f"\n>>> {params.tag}: true optimum zeta={best_zeta} ({best_bits:.3f} bits), "
+              f"default LWE.dual_hybrid reported zeta={default_zeta}")
+
+print("\n완료. 상세 메커니즘 분석은 RESEARCH_NOTE.md Appendix 참고.")

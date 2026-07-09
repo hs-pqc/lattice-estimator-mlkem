@@ -2,32 +2,55 @@
 
 Security bit estimation for ML-KEM parameter sets using the lattice-estimator.
 
+See `RESEARCH_NOTE.md` for the full research note, including the
+Appendix (2026-07) on the MATZOV ζ/t grid-resolution mechanism referenced
+below.
+
 ---
 
 ## Environment
 
 - SageMath 9.x
-- lattice-estimator (Albrecht et al.)
+- lattice-estimator (Albrecht et al.) — not on PyPI, install from source (see below)
 - Docker
 
 ## 재현 방법
 
+`lattice-estimator`는 PyPI 패키지가 아니라 소스에서 직접 받아야 합니다
+(`pip install lattice-estimator`는 존재하지 않는 패키지이므로 동작하지 않습니다).
+
 ```bash
 # SageMath Docker 컨테이너 실행
-docker run --rm -it sagemath/sagemath:latest bash
+docker run --rm -it -v ${PWD}:/home/sage/work sagemath/sagemath bash
 
-# lattice-estimator 설치
-pip install lattice-estimator
+# lattice-estimator 소스 클론
+git clone https://github.com/malb/lattice-estimator.git
+cd lattice-estimator
 
-# 스크립트 실행
+# 이 레포의 스크립트를 lattice-estimator 루트에 복사한 뒤 실행
 sage estimate_mlkem.sage
 ```
 
-또는 SageMath 설치 환경에서:
+또는 이미 SageMath와 lattice-estimator 소스가 준비된 환경에서:
 
 ```bash
-sage -pip install lattice-estimator
+cd /path/to/lattice-estimator
 sage estimate_mlkem.sage
+```
+
+### 검증 스크립트 (results/1_core/, 2026-07 추가)
+
+ζ 탐색 해상도 이슈를 재현하는 7개 스크립트. 각각의 역할은
+`RESEARCH_NOTE.md` Appendix / Section 8 참고.
+
+```bash
+sage verify_zeta_isolated.sage
+sage verify_zeta_full_scan.sage
+sage verify_zeta_direct_scan.sage
+sage verify_opt_step_direct.sage
+sage verify_zeta_512_1024.sage
+sage verify_mechanism_512.sage
+sage verify_mechanism_1024.sage
 ```
 
 ---
@@ -57,7 +80,13 @@ LWE.Parameters(n=1024, q=3329, Xs=ND.CenteredBinomial(2), Xe=ND.CenteredBinomial
 | ML-KEM-768 | 768 | 204.9 | 624 |
 | ML-KEM-1024 | 1024 | 275.1 | 874 |
 
-### Dual Hybrid Attack
+### Dual Hybrid Attack (LWE.dual_hybrid / MATZOV, default output)
+
+> These ζ values are the *default* `LWE.dual_hybrid` (MATZOV) output.
+> `RESEARCH_NOTE.md` Appendix (2026-07) shows these are subject to a
+> confirmed grid-resolution artifact (see note under "ML-KEM-768 anomaly"
+> below) — the true optimum ζ differs from what's shown here by
+> 0.23-1.08 bits depending on the parameter set.
 
 | Parameter | Security (bits) | β | p | ζ |
 |---|---|---|---|---|
@@ -89,18 +118,27 @@ LWE.Parameters(n=1024, q=3329, Xs=ND.CenteredBinomial(2), Xe=ND.CenteredBinomial
 
 정확히 64-bit씩 증가하지 않음. n이 커질수록 증가폭이 커지는 비선형 구조.
 
-### 3. ML-KEM-768 anomaly (ζ=20)
+### 3. ML-KEM-768 anomaly (ζ=20) — 2026-07 업데이트
 
 ζ: 추측(guessing) 외에 추가적인 차원 축소(dimension reduction) 크기.
 
-| 파라미터셋 | η | 전략 | 이유 |
+| 파라미터셋 | η | MATZOV 기본 출력 | 실제 전수조사 최적값 |
 |---|---|---|---|
-| ML-KEM-512 | 3 | guessing(p=5), ζ=0 | 비밀키 계수가 상대적으로 커서 차원 축소보다 추측이 유리 |
-| ML-KEM-768 | 2 | ζ=20 | n과 secret 크기의 균형점에서 차원 축소가 최적 비용 |
-| ML-KEM-1024 | 2 | ζ=0 | n이 너무 커서 차원 축소 이득이 추측 비용보다 작음 |
+| ML-KEM-512 | 3 | ζ=0 | ζ=16 (0.36 bits 차이) |
+| ML-KEM-768 | 2 | ζ=20 | ζ=24 (0.23 bits 차이) |
+| ML-KEM-1024 | 2 | ζ=0 | ζ=34 (1.08 bits 차이) |
+
+> 원래 이 섹션은 세 값(0, 20, 0)을 각 파라미터셋의 "진짜 최적 전략"으로
+> 설명했으나, `RESEARCH_NOTE.md` Appendix에서 전수조사로 확인한 결과
+> 셋 다 MATZOV의 `early_abort_range(step=10)` 그리디 탐색이 t(FFT 차원)의
+> 10-단위 이산화로 생기는 톱니형 비용 곡선에서 국소 극값에 조기 멈춘
+> 결과임이 확인되었다. 특히 ML-KEM-1024는 1.08비트, 무시하기 어려운
+> 수준의 격차. 상세 메커니즘은 `RESEARCH_NOTE.md` Appendix Experiment
+> 5-6 참고.
 
 → dual hybrid optimizer가 η(secret 분포 폭)와 n(격자 차원)의
-상호작용에 민감하게 반응함을 보여주는 사례.
+상호작용에 민감하게 반응하는 것은 사실이지만, 그 출력값 자체를
+그대로 신뢰하기 전에 그리드 해상도 검증이 필요함을 보여주는 사례.
 
 ---
 

@@ -395,3 +395,163 @@ at risk under MATZOV + approximate hints combined attack.
 
 This connects directly to Hhan et al. S&P 2026 which analyzes
 the cost reduction from approximate vs perfect hints.
+## Appendix: MATZOV ζ Search Resolution — Mechanism and Verification (2026-07)
+
+### Background
+
+`LWE.dual_hybrid` in lattice-estimator resolves to `MATZOV.__call__`
+(`estimator/lwe_dual.py`), which searches over ζ (k_enum) and t (k_fft)
+using `early_abort_range(..., step=10)` — a **hardcoded** grid step,
+independent of the public `opt_step` parameter. `early_abort_range` is a
+greedy search: it terminates as soon as the cost increases once. This
+appendix documents a full reconstruction of the ζ=20 vs ζ=32 discrepancy
+originally reported in Section 4, and identifies the exact mechanism
+behind it.
+
+### Experiment 1 — Isolating the MATZOV ζ search
+
+For ML-KEM-768, the default MATZOV call finds ζ=20 (log2(rop)=196.4).
+Adjusting the internal grid step for ζ alone (with t held at the default
+step of 10) still gives ζ=4 — worse, not better, than the default. This
+rules out simple "finer grid → better answer" as the story; the search
+is path-dependent, not merely under-resolved.
+
+### Experiment 2 — Full ζ enumeration under MATZOV (ML-KEM-768)
+
+Scanning ζ=0..768 (step=4), with p and t re-optimized at each ζ:
+- Local non-convexity for ζ=0..32 (amplitude ≈1.7 bits)
+- Monotonic increase beyond ζ≈36
+- **True global minimum: ζ=24, log2(rop)=196.133**
+- Default MATZOV output (ζ=20) is only 0.23 bits above the true optimum
+
+### Experiment 3 — Reproducing the original ζ=32 (direct call, no FFT)
+
+The original ζ=20 vs 32 comparison in Section 4 was between MATZOV
+(FFT distinguisher assumed) and the direct `dual_hybrid` call (FFT
+distinguisher **not** assumed, `fft=False`), not between two grid
+resolutions. A full enumeration of the direct call reproduces the
+recorded optimum exactly:
+
+**Global minimum: ζ=32, log2(rop)=206.357** — matches Section 4's
+recorded value (ζ=32, rop=206.4) exactly.
+
+The direct-call cost curve is smooth and strictly unimodal (monotonic
+decrease then increase around ζ=32), unlike the MATZOV curve.
+
+### Experiment 4 — opt_step robustness of the direct call
+
+Running the direct call with `opt_step` ∈ {1,2,4,8,16,32} on ML-KEM-768:
+all six runs converge to the identical result (ζ=32, log2(rop)=206.357).
+**The direct call is fully robust to opt_step; the grid-resolution
+problem is specific to the MATZOV cost model, not to dual_hybrid search
+in general.**
+
+### Experiment 5 — MATZOV ζ=0 anomaly in ML-KEM-512 / ML-KEM-1024
+
+`LWE.dual_hybrid` (MATZOV) reports ζ=0 for both ML-KEM-512 and
+ML-KEM-1024. Full enumeration (ζ=0..60, step=2) shows this is *not* the
+true optimum:
+
+| Parameter | MATZOV default | True global minimum (full scan) | Gap |
+|---|---|---|---|
+| ML-KEM-512  | ζ=0, log2(rop)=139.656  | ζ=16, log2(rop)=139.298 | 0.36 bits |
+| ML-KEM-768  | ζ=20, log2(rop)=196.366 | ζ=24, log2(rop)=196.133 | 0.23 bits |
+| ML-KEM-1024 | ζ=0, log2(rop)=262.336  | ζ=34, log2(rop)=261.257 | **1.08 bits** |
+
+### Experiment 6 — Mechanism: discrete re-optimization of (p, t)
+
+Fine-grained scans (step=1) of ζ, recording p (FFT modulus) and t
+(k_fft) alongside cost, reveal the source of the non-convexity.
+
+ML-KEM-1024 (ζ=0..40, step=1) shows a clear **sawtooth pattern**: t
+takes only the values {120, 110, 100, 90, 80, 70, ...} because
+`early_abort_range` steps t in units of 10. Within each t-block, cost
+strictly decreases as ζ increases; at each block boundary (t drops by
+10), cost jumps back up. Example:
+
+```
+zeta=8,  t=110, log2(rop)=261.840   <- local minimum within block
+zeta=9,  t=110, log2(rop)=262.310   <- cost rises (still same block)
+zeta=10, t=100, log2(rop)=263.103   <- block boundary, cost jumps up
+...
+zeta=34, t=80,  log2(rop)=261.257   <- true global minimum, several blocks later
+```
+
+The greedy search terminates at the first local rise (ζ=0→1 for
+ML-KEM-1024, within the very first block) and never reaches the lower
+minima in subsequent t-blocks.
+
+### Conclusion
+
+The ζ=20-vs-32 discrepancy originally reported is **not** a pure
+grid-resolution artifact of `opt_step`. It stems from a difference in
+cost model (FFT distinguisher assumed vs not). However, full enumeration
+uncovered a **separate, confirmed issue**: MATZOV's hardcoded
+`early_abort_range(step=10)` search over ζ and t produces a sawtooth
+cost surface (caused by the 10-unit discretization of t), and the
+greedy termination rule can stop at a local rise before reaching a lower
+minimum in a later block. This is confirmed across all three ML-KEM
+parameter sets, with the gap ranging 0.23–1.08 bits (worst case:
+ML-KEM-1024). The direct `dual_hybrid` call (no FFT assumption) does not
+exhibit this issue and is robust to `opt_step` across 1–32.
+
+**Practical implication:** security-bit estimates produced by
+`LWE.dual_hybrid` (MATZOV) for ML-KEM-1024-class parameters may
+underestimate attacker cost by up to ~1 bit due to this grid artifact,
+independent of the separate FFT-assumption question already discussed
+in Section 5 / Section 11.
+
+### Reproducibility
+
+All experiments use lattice-estimator (main branch, as of 2026-07),
+SageMath. Scripts:
+- `verify_zeta_isolated.sage` — Experiment 1
+- `verify_zeta_full_scan.sage` — Experiment 2
+- `verify_zeta_direct_scan.sage` — Experiment 3
+- `verify_opt_step_direct.sage` — Experiment 4
+- `verify_zeta_512_1024.sage` — Experiment 5
+- `verify_mechanism_512.sage`, `verify_mechanism_1024.sage` — Experiment 6
+
+### Open follow-up
+
+- Confirm whether NIST/official MATZOV-derived security-bit claims for
+  ML-KEM-1024 are affected in practice (the 1.08-bit gap is within
+  typical safety margins but should be checked against the specific
+  claim being cited).
+- Consider filing this as a GitHub issue against `malb/lattice-estimator`
+  (see draft below).
+
+---
+
+## Draft GitHub issue (malb/lattice-estimator)
+
+**Title:** MATZOV ζ/t search (`early_abort_range`, step=10) can miss the
+global optimum due to sawtooth cost structure
+
+**Body:**
+
+`LWE.dual_hybrid` (which dispatches to `MATZOV.__call__` in
+`lwe_dual.py`) searches ζ (k_enum) and t (k_fft) using
+`early_abort_range(..., step=10)`, a greedy search that stops at the
+first cost increase. Because t is only re-optimized in steps of 10, the
+cost-vs-ζ curve has a sawtooth shape (cost decreases within a t-block,
+then jumps up at each block boundary). If the first step from ζ=0
+happens to land on a local rise, the search terminates immediately and
+reports ζ=0, even when much lower-cost points exist at larger ζ in
+later blocks.
+
+Reproduced for ML-KEM-512, ML-KEM-768, and ML-KEM-1024 (full ζ
+enumeration vs default `LWE.dual_hybrid` output):
+
+| Parameter | Default (MATZOV) ζ | True optimum ζ (full scan) | log2(rop) gap |
+|---|---|---|---|
+| ML-KEM-512  | 0  | 16 | 0.36 |
+| ML-KEM-768  | 20 | 24 | 0.23 |
+| ML-KEM-1024 | 0  | 34 | 1.08 |
+
+Minimal repro (ML-KEM-1024): full enumeration of ζ=0..40 (step=1) shows
+t taking only values {120,110,...,70}, with cost rising at each block
+boundary and a global minimum at ζ=34 that the default greedy search
+never reaches because it stops at ζ=0→1.
+
+Happy to share the full scan scripts/data if useful.

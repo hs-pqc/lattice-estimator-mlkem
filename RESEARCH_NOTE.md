@@ -1,67 +1,78 @@
 # From Empirical Formulas to Search Resolution: Rethinking ζ_optimal in Dual Hybrid Attacks on LWE
 
-**Status:** Research Note (Work in Progress)  
-**Author:** Hangshin Cho (hs-pqc)  
-**Date:** June 2026 (initial formulas); July 2026 (reframing)
+**Status:** Research Note (Work in Progress)
+**Author:** Hangshin Cho (hs-pqc)
+**Date:** June 2026 (initial formulas); July 2026 (reframing); July 2026 (search-resolution mechanism resolved, see Appendix)
 
 ---
 
 ## Abstract
 
 We initially set out to find a closed-form empirical formula for the
-optimal splitting dimension ζ in dual hybrid attacks on LWE, as a function
-of lattice dimension n, modulus q, and secret distribution parameter η.
-Systematic experiments across 42 parameter sets (ML-KEM, ML-DSA, NTRU+,
-HAETAE) produced two candidate formulas with reasonable fit (max_err ≤ 5).
+optimal splitting dimension ζ in dual hybrid attacks on LWE, as a
+function of lattice dimension n, modulus q, and secret distribution
+parameter η. Systematic experiments across 42 parameter sets (ML-KEM,
+ML-DSA, NTRU+, HAETAE) produced two candidate formulas with reasonable
+fit (max_err ≤ 5).
 
-However, closer analysis of *why* the two cost-model call paths in
+However, closer analysis of why the two cost-model call paths in
 lattice-estimator — `LWE.dual_hybrid` (indirect, MATZOV) and
-`dual_hybrid` (direct) — disagree on ζ by as much as 20–40 units for the
-same parameters revealed that **treating ζ_optimal as a function of
-(n, q, η) alone is a misframing**. ζ is determined jointly by (a) which
-call path is used, since the two paths encode different assumptions about
-whether an FFT distinguisher is realistically implementable, and (b) the
-optimizer's search structure — in particular, the indirect call's coarse
-`opt_step` grid (~8–10 unit steps), which appears to report ζ=0 for
-ML-KEM-512 and ML-KEM-1024 as a search-resolution artifact rather than a
-true optimum. A parameter-indexed formula cannot capture either effect,
-because it silently assumes the search that produced its training data was
-resolved finely enough to trust.
+`dual_hybrid` (direct) — disagree on ζ by as much as 20–40 units for
+the same parameters revealed that treating ζ_optimal as a function of
+(n, q, η) alone is a misframing. ζ is determined jointly by (a) which
+call path is used, since the two paths encode different assumptions
+about whether an FFT distinguisher is realistically implementable, and
+(b) the optimizer's search structure — in particular, the indirect
+call's hardcoded internal grid step (10 units, independent of the
+public `opt_step` parameter), which **is confirmed** (see Appendix) to
+report ζ=0 for ML-KEM-512 and ML-KEM-1024 as a search-resolution
+artifact rather than a true optimum. A parameter-indexed formula cannot
+capture either effect, because it silently assumes the search that
+produced its training data was resolved finely enough to trust.
 
-This reframes the useful question from *"what is ζ_optimal(n, q, η)?"* to
-*"how does search resolution affect the reliability of the resulting rop
-(security-bit) estimate?"* — a question about the estimator's behavior,
-not about the lattice parameters. Under this lens, the ~10-bit spread we
-observe in ML-KEM-768's security margin between the two call paths is
-better understood as an artifact of assumption/resolution mismatch than
-as a property of ML-KEM-768 itself. The original formulas are retained
-below (Section 5) as a documented first attempt, superseded by this
-reframing.
+This reframes the useful question from "what is ζ_optimal(n, q, η)?" to
+"how does search resolution affect the reliability of the resulting rop
+(security-bit) estimate?" — a question about the estimator's behavior,
+not about the lattice parameters. Under this lens, the ~10-bit spread
+we observe in ML-KEM-768's security margin between the two call paths
+is better understood as an artifact of assumption/resolution mismatch
+than as a property of ML-KEM-768 itself. The original formulas are
+retained below (Section 5) as a documented first attempt, superseded by
+this reframing. The search-resolution question itself is fully resolved
+in the Appendix: the two call paths differ primarily because of the
+FFT-assumption (not grid resolution), but MATZOV's internal ζ/t search
+independently has a confirmed, quantified grid-resolution artifact
+(0.23–1.08 bits across ML-KEM-512/768/1024) with an identified
+mechanism.
+
+---
 
 ## 1. Introduction
 
-The dual hybrid attack combines lattice reduction (BKZ) with exhaustive search
-over a subset of secret coordinates. The splitting dimension ζ controls the
-trade-off between BKZ cost and guessing cost:
+The dual hybrid attack combines lattice reduction (BKZ) with exhaustive
+search over a subset of secret coordinates. The splitting dimension ζ
+controls the trade-off between BKZ cost and guessing cost:
 
-- **Large ζ:** fewer dimensions for BKZ → cheaper lattice reduction,
-  but more secret coordinates to guess
-- **Small ζ:** more dimensions for BKZ → expensive lattice reduction,
-  but fewer coordinates to guess
+- Large ζ: fewer dimensions for BKZ → cheaper lattice reduction, but
+  more secret coordinates to guess
+- Small ζ: more dimensions for BKZ → expensive lattice reduction, but
+  fewer coordinates to guess
 
 The optimal ζ minimizes total attack cost. In practice, lattice-estimator
-finds ζ numerically via binary search (local_minimum in lwe_dual.py).
+finds ζ numerically via binary search (`local_minimum` in `lwe_dual.py`)
+for the direct call, and via a hardcoded greedy grid search
+(`early_abort_range`) for the MATZOV call path (see Appendix).
 
-**Original Research Question (superseded):**  
+**Original Research Question (superseded):**
 Can ζ_optimal be expressed as a closed-form function of (n, q, η)?
 
-**Current Research Question:**  
-How does the resolution of the ζ search (grid step, call path, cost-model
-assumptions) affect the reliability of the resulting rop (security-bit)
-estimate? Put differently: when lattice-estimator reports a security
-level, how much of that number reflects the cryptographic hardness of the
-instance, and how much reflects the coarseness of the search that produced
-it?
+**Current Research Question (resolved, see Appendix):**
+How does the resolution of the ζ search (grid step, call path,
+cost-model assumptions) affect the reliability of the resulting rop
+(security-bit) estimate? Put differently: when lattice-estimator
+reports a security level, how much of that number reflects the
+cryptographic hardness of the instance, and how much reflects the
+coarseness of the search that produced it?
 
 ---
 
@@ -80,19 +91,23 @@ LWE instance: (A, b = As + e) where:
 ### 2.2 Dual Hybrid Attack Cost
 
 Total cost = BKZ cost + Guessing cost
-BKZ cost    ≈ 2^(0.292β)
-
+BKZ cost ≈ 2^(0.292β)
 Guessing cost ≈ (2η+1)^ζ
-Optimal ζ satisfies:
-d/dζ [BKZ_cost(n-ζ) + Guessing_cost(ζ)] = 0
+Optimal ζ satisfies: d/dζ [BKZ_cost(n-ζ) + Guessing_cost(ζ)] = 0
+
 ### 2.3 lattice-estimator
 
-Open-source tool by Albrecht et al.
-Uses local_minimum binary search to find optimal (β, ζ) numerically.
+Open-source tool by Albrecht et al. Uses `local_minimum` binary search
+to find optimal (β, ζ) numerically for the direct `dual_hybrid` call.
+The `LWE.dual_hybrid` public API dispatches instead to `MATZOV.__call__`,
+which uses a separate, hardcoded greedy grid search over ζ and t
+(FFT dimension) — see Appendix for full detail.
 
 **Key finding:** We use `dual_hybrid` direct call (not `LWE.dual_hybrid`)
-for accurate results. `LWE.dual_hybrid` uses MATZOV cost model which
-gives estimates consistent with the official MATZOV security analysis.
+for accurate results in Sections 3–6 and 10–11. `LWE.dual_hybrid` uses
+the MATZOV cost model, which gives estimates consistent with the
+official MATZOV security analysis but is subject to the grid-resolution
+artifact documented in the Appendix.
 
 ---
 
@@ -138,18 +153,22 @@ Two cost models give significantly different ζ values:
 | NTRU+576 | 20 | 25 | +5 |
 | NTRU+1152 | 30 | 43 | +13 |
 
-MATZOV uses FFT distinguisher which makes ζ=0 optimal for some parameters.
-dual_hybrid direct call finds larger ζ values without FFT assumption.
-ML-KEM-512 and ML-KEM-1024 show ζ=0 under MATZOV — meaning no dimension
-reduction is optimal when FFT is available.
+MATZOV uses FFT distinguisher which makes ζ=0 optimal for some
+parameters. `dual_hybrid` direct call finds larger ζ values without
+FFT assumption. ML-KEM-512 and ML-KEM-1024 show ζ=0 under MATZOV —
+meaning no dimension reduction is optimal when FFT is available.
 
-**Caveat (see Section 5.0 and Open Problem 0):** the indirect call's
-default `opt_step` (~8–10) means ζ=0 could also simply be the coarsest
-grid point evaluated, rather than a confirmed optimum. We have not yet
-re-run this comparison at `opt_step=1` to rule this out — this is the
-single most important unresolved check in this note, since it would
-determine whether the FFT-assumption story above is the full explanation
-or only part of it.
+**Resolved (see Appendix, 2026-07):** the indirect call's ζ=0 output
+for ML-KEM-512/1024 is confirmed to be partly a search-resolution
+artifact, not purely a consequence of the FFT assumption. Full
+enumeration shows the true MATZOV-model optimum is ζ=16 (ML-KEM-512)
+and ζ=34 (ML-KEM-1024), not ζ=0 — a gap of 0.36 and 1.08 bits
+respectively. For ML-KEM-768 the gap is smaller (0.23 bits, true
+optimum ζ=24 vs reported ζ=20). The FFT-assumption difference
+(Section 4.2 table above) remains the dominant driver of the ζ=20-vs-32
+style gaps; the grid-resolution artifact is a separate, smaller,
+independently confirmed effect on top of it.
+
 ### 4.3 ζ scales with n/log2(q)
 
 ζ/n ≈ 0.030 + 0.096/√(n/log2(q))
@@ -158,8 +177,8 @@ This suggests ζ ≈ 0.030n + 0.096√(n × log2(q)) for small q.
 
 ### 4.4 C(η) follows η^(1/3)
 
-When normalizing ζ × log2(q) / n, the resulting constant C varies
-with η following approximately η^(1/3):
+When normalizing ζ × log2(q) / n, the resulting constant C varies with
+η following approximately η^(1/3):
 
 | η | C = ζ×log2(q)×η^(1/3)/n |
 |---|---|
@@ -178,41 +197,40 @@ C converges to ≈ 0.597 for η ≥ 2.
 ### 5.0 Why a Parameter-Indexed Formula Doesn't Work
 
 The formulas below were fit to ζ values produced by the `dual_hybrid`
-direct call at a fixed `opt_step`. Two problems only became visible after
-the fact:
+direct call at a fixed `opt_step`. Two problems only became visible
+after the fact:
 
 1. **Call-path dependence.** `LWE.dual_hybrid` (indirect, MATZOV) and
-   `dual_hybrid` (direct) do not disagree because one is "more accurate" —
-   they encode different assumptions about FFT distinguisher
-   implementability (Section 4.2). A formula fit to one call path's output
-   is a formula for *that assumption*, not for ζ_optimal in general. Fitting
-   across both paths in one formula is not meaningful, since they are not
-   estimating the same quantity.
+   `dual_hybrid` (direct) do not disagree because one is "more
+   accurate" — they encode different assumptions about FFT
+   distinguisher implementability (Section 4.2). A formula fit to one
+   call path's output is a formula for that assumption, not for
+   ζ_optimal in general. Fitting across both paths in one formula is
+   not meaningful, since they are not estimating the same quantity.
 
-2. **Search-resolution dependence.** The indirect call's default
-   `opt_step` (~8–10) is coarse enough that for ML-KEM-512 and ML-KEM-1024
-   it likely never evaluates the true optimum and reports ζ=0 by default
-   instead of a small nonzero value. Any formula trained on this output
-   inherits the artifact as if it were signal.
+2. **Search-resolution dependence.** The indirect call's hardcoded
+   internal grid step (10 units) is confirmed (Appendix) to be coarse
+   enough that for ML-KEM-512 and ML-KEM-1024 it does not evaluate the
+   true optimum and reports ζ=0 by default instead of ζ=16 / ζ=34
+   respectively. Any formula trained on this output would inherit the
+   artifact as if it were signal.
 
-Because both effects are about the *search and cost-model machinery*,
+Because both effects are about the search and cost-model machinery,
 not about (n, q, η), no formula indexed only on parameter values can be
 correct in principle — it will always be a formula for "whatever the
 grid happened to find," which changes if the grid changes. This is the
 core reframing of this note: the two formulas below are kept as a
 documented first attempt, not as the intended contribution.
 
-### Formula 1: Practical Formula
-
-> **ζ ≈ floor((-0.076 + 0.701 × η^0.2) × n / (log2(q) × log2(η+1))) + 2**
+**Formula 1: Practical Formula**
+> ζ ≈ floor((-0.076 + 0.701 × η^0.2) × n / (log2(q) × log2(η+1))) + 2
 
 - Derived via least-squares fitting
 - Valid: n≥512, η≥1, q=1021~2^60
 - Accuracy: max_err=3, avg_err=1.00 (42 parameter sets)
 
-### Formula 2: Mathematically Motivated
-
-> **ζ ≈ floor(0.597 × n / (log2(q) × η^(1/3))) + 2**
+**Formula 2: Mathematically Motivated**
+> ζ ≈ floor(0.597 × n / (log2(q) × η^(1/3))) + 2
 
 - Derived from minimizing variance of C(η) over α
 - Optimal α = 1/3 (cube root)
@@ -229,7 +247,7 @@ CenteredBinomial(η) has standard deviation σ = √(η/2).
 
 η^(1/3) = (η/2)^(1/3) × 2^(1/3) ∝ σ^(2/3)
 
-**Conjecture:** The guessing cost in dual hybrid attack scales as σ^(2/3),
+Conjecture: The guessing cost in dual hybrid attack scales as σ^(2/3),
 not σ or σ².
 
 This is consistent with the balance condition:
@@ -240,9 +258,8 @@ where guessing_cost_per_coordinate ∝ σ^(2/3) = η^(1/3).
 
 0.597 ≈ 0.292 × 2.044
 
-0.292 is the BKZ exponent (Albrecht et al.).
-The factor 2.044 may relate to the ratio between
-lattice dimension and effective guessing dimension.
+0.292 is the BKZ exponent (Albrecht et al.). The factor 2.044 may relate
+to the ratio between lattice dimension and effective guessing dimension.
 
 **Open Question:** What is the exact mathematical origin of C ≈ 0.597?
 
@@ -250,51 +267,59 @@ lattice dimension and effective guessing dimension.
 
 ## 7. Open Problems
 
-0. **[Primary] Search resolution vs. rop reliability:**
-   For a fixed instance, how does varying `opt_step` (grid coarseness)
-   change the reported rop? Does the reported security level converge
-   as `opt_step` → 1, or does it plateau early? If ML-KEM-512/1024's
-   ζ=0 result is a resolution artifact, does refining the grid change
-   their reported bit-security, or only ζ itself (i.e., is the cost
-   function flat enough near ζ=0 that rop is robust even when ζ is
-   not)? This determines whether the ~10-bit ML-KEM-768 spread
-   (Section 11) is a real modeling uncertainty or a fixable estimator
-   artifact.
+**[Primary — RESOLVED, see Appendix (2026-07)]** Search resolution vs.
+rop reliability: For a fixed instance, how does varying `opt_step` (grid
+coarseness) change the reported rop? Does the reported security level
+converge as `opt_step` → 1, or does it plateau early? If ML-KEM-512/1024's
+ζ=0 result is a resolution artifact, does refining the grid change their
+reported bit-security, or only ζ itself?
+→ **Answer:** For the direct call, rop is fully converged and
+`opt_step`-independent (tested opt_step ∈ {1,2,4,8,16,32}, identical
+result each time). For the MATZOV call path, the grid artifact is real
+and quantified: ML-KEM-512 gap 0.36 bits, ML-KEM-768 gap 0.23 bits,
+ML-KEM-1024 gap 1.08 bits. Mechanism identified: MATZOV's internal t
+(FFT dimension) search is hardcoded to step in units of 10, producing a
+sawtooth cost surface; the greedy search can terminate at a local rise
+before reaching a lower minimum in a later block. See Appendix for full
+derivation. This means the ~10-bit ML-KEM-768 spread in Section 11 is
+predominantly a real FFT-assumption modeling uncertainty, not primarily
+an estimator artifact — the estimator artifact contributes only ≤0.23
+bits of that spread for ML-KEM-768 (larger, up to 1.08 bits, for
+ML-KEM-1024).
 
-1. **Mathematical proof of η^(1/3):**
-   Prove that guessing cost in dual hybrid scales as σ^(2/3).
-   Direct verification shows LHS/RHS ≈ 2~3 (not 1), suggesting
-   the balance condition is more complex than BKZ_cost = Guess_cost.
+**Mathematical proof of η^(1/3):** Prove that guessing cost in dual
+hybrid scales as σ^(2/3). Direct verification shows LHS/RHS ≈ 2~3 (not
+1), suggesting the balance condition is more complex than
+BKZ_cost = Guess_cost. *(Still open.)*
 
-2. **Origin of C ≈ 0.597:**
-   0.597 ≈ 0.292 × 2.044. The factor 2.044 may relate to
-   repetition cost, sieving dimension, or memory cost in BKZ.
-   Deriving C analytically from the full cost function remains open.
+**Origin of C ≈ 0.597:** 0.597 ≈ 0.292 × 2.044. The factor 2.044 may
+relate to repetition cost, sieving dimension, or memory cost in BKZ.
+Deriving C analytically from the full cost function remains open.
+*(Still open.)*
 
-3. **η=1 anomaly:**
-   Formula 2 has larger errors for η=1 (max_err=5).
-   Empirically, ζ(η=1)/ζ(η=2) ≈ 1.38 consistently across n.
-   This ratio is larger than η^(1/3) predicts (2^(1/3) ≈ 1.26).
-   Conjecture: η=1 sparsity introduces an additional factor of (4/3)^(1/3).
+**η=1 anomaly:** Formula 2 has larger errors for η=1 (max_err=5).
+Empirically, ζ(η=1)/ζ(η=2) ≈ 1.38 consistently across n. This ratio is
+larger than η^(1/3) predicts (2^(1/3) ≈ 1.26). Conjecture: η=1 sparsity
+introduces an additional factor of (4/3)^(1/3). *(Still open.)*
 
-4. **Cost model independence:**
-   All experiments use MATZOV cost model (default in lattice-estimator 0.1.0).
-   ADPS16, Kyber, and quantum cost models are not compatible
-   with dual_hybrid in this version. Verification under other
-   cost models remains open.
+**Cost model independence:** All experiments use MATZOV cost model
+(default in lattice-estimator 0.1.0). ADPS16, Kyber, and quantum cost
+models are not compatible with `dual_hybrid` in this version.
+Verification under other cost models remains open. *(Still open.)*
 
-5. **SMAUG-T analysis:**
-   SMAUG-T uses sparse secret (HWT distribution) with small h.
-   lattice-estimator 0.1.0 does not support SparseTernary(n, h)
-   for small h values. Separate analysis needed.
+**SMAUG-T analysis:** SMAUG-T uses sparse secret (HWT distribution)
+with small h. lattice-estimator 0.1.0 does not support
+`SparseTernary(n, h)` for small h values. Separate analysis needed.
+*(Still open — see also Section 10 connection to approximate hints.)*
 
-6. **Connection to security margins:**
-   How does ζ_optimal relate to actual security margins
-   in NIST/KPQC PQC standards?
+**Connection to security margins:** How does ζ_optimal relate to actual
+security margins in NIST/KPQC PQC standards? *(Still open.)*
 
-7. **Generalization beyond CBD:**
-   All experiments use CenteredBinomial(η).
-   Does the formula extend to DiscreteGaussian or other distributions?
+**Generalization beyond CBD:** All experiments use CenteredBinomial(η).
+Does the formula extend to DiscreteGaussian or other distributions?
+*(Still open.)*
+
+---
 
 ## 8. Experimental Data
 
@@ -314,11 +339,27 @@ All experimental results are in the `results/` directory.
 | `hints_all.txt` | ML-KEM hint threshold comparison |
 | `C_vs_nlogq.png` | C vs n/log2(q) visualization |
 
+### Search-resolution verification (`results/1_core/`, added 2026-07)
+
+| File | Content |
+|---|---|
+| `verify_zeta_isolated.sage` | ζ-only grid isolation (ML-KEM-768) |
+| `verify_zeta_full_scan.sage` | Full ζ enumeration under MATZOV (ML-KEM-768) |
+| `verify_zeta_direct_scan.sage` | Full ζ enumeration, direct call (reproduces ζ=32) |
+| `verify_opt_step_direct.sage` | opt_step robustness test, direct call |
+| `verify_zeta_512_1024.sage` | Full ζ enumeration under MATZOV (ML-KEM-512/1024) |
+| `verify_mechanism_512.sage` | p/t trace, ML-KEM-512 |
+| `verify_mechanism_1024.sage` | p/t trace, ML-KEM-1024 (sawtooth mechanism) |
+
 ### Analysis (`results/2_analysis/`)
+
 Intermediate experiments and fitting results.
 
 ### Deprecated (`results/3_deprecated/`)
-Early results using LWE.dual_hybrid (MATZOV) — kept for reference.
+
+Early results using `LWE.dual_hybrid` (MATZOV) — kept for reference.
+
+---
 
 ## 9. References
 
@@ -332,6 +373,8 @@ Early results using LWE.dual_hybrid (MATZOV) — kept for reference.
 8. Cheon et al., "SMAUG-T: Post-Quantum KEM", KpqC 2025
 9. Hhan, Hong, Kim, Lee, Lee, "From Perfect to Approximate Hints: Efficient LWE Secret Recovery Leveraging Low Hamming Weight", S&P 2026 (ePrint 2026/1081) — co-authored by Changmin Lee
 10. Kim, Lee, Kim, Lee, "SQIsign with Fixed-Precision Integer Arithmetic", PKC 2026 (ePrint 2025/1649) — Changmin Lee, corresponding author
+
+---
 
 ## 10. Connection to Approximate Hints
 
@@ -349,20 +392,22 @@ This is a rough model; accurate analysis requires DBDD framework.
 | Parameter | Base security | Margin | Threshold |
 |---|---|---|---|
 | ML-KEM-512 | 139.7 bits | 11.7 bits | ~44 hints |
-| ML-KEM-768 | 196.4 bits | **4.4 bits** | **~16 hints** |
+| ML-KEM-768 | 196.4 bits | 4.4 bits | ~16 hints |
 | ML-KEM-1024 | 262.3 bits | 6.3 bits | ~21 hints |
+
+---
 
 ## 11. FFT Distinguisher and Security Margin Uncertainty
 
 ### Key Claim
 
-The practical security of ML-KEM-768 critically depends on whether
-the FFT distinguisher (MATZOV) is realistically implementable.
+The practical security of ML-KEM-768 critically depends on whether the
+FFT distinguisher (MATZOV) is realistically implementable.
 
 | Parameter | Target | FFT available | FFT unavailable | Uncertainty |
 |---|---|---|---|---|
 | ML-KEM-512 | 128 bits | 11.7 bits | 17.5 bits | 5.9 bits |
-| ML-KEM-768 | 192 bits | **4.4 bits** | 14.4 bits | **10.0 bits** |
+| ML-KEM-768 | 192 bits | 4.4 bits | 14.4 bits | 10.0 bits |
 | ML-KEM-1024 | 256 bits | 6.3 bits | 21.5 bits | 15.2 bits |
 
 ### Interpretation
@@ -370,31 +415,36 @@ the FFT distinguisher (MATZOV) is realistically implementable.
 - If FFT is realistic → ML-KEM-768 margin is only 4.4 bits (most vulnerable)
 - If FFT is unrealistic → ML-KEM-768 margin is 14.4 bits (safe)
 - ML-KEM-768 has the largest security uncertainty (10 bits) among all three
+- Of this uncertainty, ≤0.23 bits (ML-KEM-768) is attributable to the
+  MATZOV grid-resolution artifact (Appendix); the remainder is a
+  genuine open question about FFT distinguisher realizability.
 
 ### Open Question
 
 What is the realistic implementation cost of the FFT distinguisher?
-This single question determines whether ML-KEM-768 is the weakest
-or the middle parameter set among the three ML-KEM variants.
+This single question determines whether ML-KEM-768 is the weakest or
+the middle parameter set among the three ML-KEM variants.
 
-Combined with approximate hints (Section 10), if FFT is realistic
-and 16 hints are obtainable, ML-KEM-768 NIST Level 3 security
-may be at risk.
+Combined with approximate hints (Section 10), if FFT is realistic and
+16 hints are obtainable, ML-KEM-768 NIST Level 3 security may be at risk.
 
 ### Key Finding
 
-**ML-KEM-768 has the smallest margin (4.4 bits) among all three
-parameter sets.** Only ~16 approximate hints are needed to break
-NIST Level 3 security (192 bits).
+ML-KEM-768 has the smallest margin (4.4 bits) among all three parameter
+sets. Only ~16 approximate hints are needed to break NIST Level 3
+security (192 bits).
 
 ### Open Question
 
 Can an attacker realistically obtain 16 approximate hints against
-ML-KEM-768 in practice? If so, NIST Level 3 security may be
-at risk under MATZOV + approximate hints combined attack.
+ML-KEM-768 in practice? If so, NIST Level 3 security may be at risk
+under MATZOV + approximate hints combined attack.
 
-This connects directly to Hhan et al. S&P 2026 which analyzes
-the cost reduction from approximate vs perfect hints.
+This connects directly to Hhan et al. S&P 2026 which analyzes the cost
+reduction from approximate vs perfect hints.
+
+---
+
 ## Appendix: MATZOV ζ Search Resolution — Mechanism and Verification (2026-07)
 
 ### Background

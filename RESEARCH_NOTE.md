@@ -498,15 +498,13 @@ in general.**
 
 ### Experiment 5 — MATZOV ζ=0 anomaly in ML-KEM-512 / ML-KEM-1024
 
-`LWE.dual_hybrid` (MATZOV) reports ζ=0 for both ML-KEM-512 and
-ML-KEM-1024. Full enumeration (ζ=0..60, step=2) shows this is *not* the
-true optimum:
+`LWE.dual_hybrid` (MATZOV) reports ζ=0 for ML-KEM-512 and ML-KEM-1024,
+and ζ=20 for ML-KEM-768. An initial full enumeration of ζ alone (step=2,
+with t still searched via the default `early_abort_range(step=10)`)
+found gaps of 0.36 / 0.23 / 1.08 bits. However, this scan inherited the
+same coarse t-resolution the issue is about — see Experiment 7 below for
+the corrected, fully-resolved figures.
 
-| Parameter | MATZOV default | True global minimum (full scan) | Gap |
-|---|---|---|---|
-| ML-KEM-512  | ζ=0, log2(rop)=139.656  | ζ=16, log2(rop)=139.298 | 0.36 bits |
-| ML-KEM-768  | ζ=20, log2(rop)=196.366 | ζ=24, log2(rop)=196.133 | 0.23 bits |
-| ML-KEM-1024 | ζ=0, log2(rop)=262.336  | ζ=34, log2(rop)=261.257 | **1.08 bits** |
 
 ### Experiment 6 — Mechanism: discrete re-optimization of (p, t)
 
@@ -531,19 +529,41 @@ The greedy search terminates at the first local rise (ζ=0→1 for
 ML-KEM-1024, within the very first block) and never reaches the lower
 minima in subsequent t-blocks.
 
-### Conclusion
+### Experiment 7 — Full resolution in both ζ and t (2026-07, added)
 
-The ζ=20-vs-32 discrepancy originally reported is **not** a pure
-grid-resolution artifact of `opt_step`. It stems from a difference in
-cost model (FFT distinguisher assumed vs not). However, full enumeration
-uncovered a **separate, confirmed issue**: MATZOV's hardcoded
-`early_abort_range(step=10)` search over ζ and t produces a sawtooth
-cost surface (caused by the 10-unit discretization of t), and the
-greedy termination rule can stop at a local rise before reaching a lower
-minimum in a later block. This is confirmed across all three ML-KEM
-parameter sets, with the gap ranging 0.23–1.08 bits (worst case:
-ML-KEM-1024). The direct `dual_hybrid` call (no FFT assumption) does not
-exhibit this issue and is robust to `opt_step` across 1–32.
+The scan in Experiment 5 fixed ζ exhaustively but still searched t via
+`early_abort_range(step=10)` internally, so it inherited the same
+sawtooth artifact it was trying to measure. Re-running with **both** ζ
+and t scanned at step=1 (SageMath, lattice-estimator main branch,
+2026-07) gives:
+
+| Parameter | MATZOV default | True global optimum (ζ, t step=1) | Gap |
+|---|---|---|---|
+| ML-KEM-512  | ζ=0,  log2(rop)=139.656 | ζ=14, log2(rop)=139.057, t=34, β=385 | **0.599 bits** |
+| ML-KEM-768  | ζ=20, log2(rop)=196.366 | ζ=23, log2(rop)=195.554, t=59, β=586 | **0.812 bits** |
+| ML-KEM-1024 | ζ=0,  log2(rop)=262.336 | ζ=32, log2(rop)=261.143, t=82, β=819 | **1.192 bits** |
+
+All three gaps are larger than the step=10-in-t figures from Experiment
+5 (previously 0.36 / 0.23 / 1.08). Notably, for ML-KEM-1024 the gap grew
+even at ζ=0 itself: full t-resolution at ζ=0 gives log2(rop)=262.054,
+0.28 bits below the tool's own default output — confirming that the
+coarse t grid distorts the cost surface even before ζ is varied at all.
+
+Total scan time (full ζ×t×p enumeration, ternary-search β at each
+point): 512 — 6201s, 768 — 7001s, 1024 — 11658s (≈6.9h combined),
+illustrating why `early_abort_range(step=10)` is likely a deliberate
+speed/precision tradeoff rather than an oversight.
+
+### Conclusion (updated)
+
+The MATZOV ζ/t search's hardcoded `early_abort_range(step=10)` produces
+a sawtooth cost surface in **both** ζ and t. Confirmed, fully-resolved
+gaps between the tool's default output and the true global optimum:
+**0.60 bits (ML-KEM-512), 0.81 bits (ML-KEM-768), 1.19 bits
+(ML-KEM-1024)**. This supersedes the preliminary 0.36/0.23/1.08-bit
+figures, which themselves used a step=10 t-search and therefore
+understated the artifact. The direct `dual_hybrid` call (no FFT
+assumption) remains unaffected and robust to `opt_step` (Experiment 4).
 
 **Practical implication:** security-bit estimates produced by
 `LWE.dual_hybrid` (MATZOV) for ML-KEM-1024-class parameters may

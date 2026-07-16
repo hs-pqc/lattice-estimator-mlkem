@@ -554,6 +554,29 @@ point): 512 — 6201s, 768 — 7001s, 1024 — 11658s (≈6.9h combined),
 illustrating why `early_abort_range(step=10)` is likely a deliberate
 speed/precision tradeoff rather than an oversight.
 
+### Experiment 8 — MATZOV vs. Guo-Johansson(2021) FFT paths are different attacks (2026-07)
+
+Checked whether `LWE.dual_hybrid` (MATZOV) and `dual_hybrid(fft=True)` — both
+described as using an "FFT distinguisher" — actually implement the same
+technique. They do not: `dual_hybrid(fft=True)` uses the Walsh–Hadamard
+transform-based distinguisher from [AC:GuoJoh21], a different published
+algorithm from MATZOV's own FFT-based guessing cost model.
+
+For ML-KEM-768 (SageMath, lattice-estimator main):
+
+| Method | log2(rop) |
+|---|---|
+| MATZOV (`LWE.dual_hybrid`), default | 196.37 |
+| `dual_hybrid(fft=True)` (Guo-Johansson) | 203.79 (ζ=31, t=120) |
+| `dual_hybrid(fft=False)` | 206.36 |
+
+MATZOV finds an attack **8.2 bits cheaper** than the generic framework's
+FFT option, despite both nominally "using FFT." This confirms that the
+ζ discrepancy discussed in Experiments 1–4 is not just a resolution
+artifact but reflects genuinely different attack algorithms under the
+hood — and that MATZOV, not `dual_hybrid(fft=True)`, is the correct
+baseline for the sawtooth analysis in Experiment 7.
+
 ### Conclusion (updated)
 
 The MATZOV ζ/t search's hardcoded `early_abort_range(step=10)` produces

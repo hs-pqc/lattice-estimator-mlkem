@@ -439,3 +439,120 @@ Reproduced for ML-KEM-512, ML-KEM-768, and ML-KEM-1024 (full ζ×t enumeration v
 Minimal repro (ML-KEM-1024): full enumeration of ζ and t (step=1) shows the tool's internal `early_abort_range(step=10)` restricts t to values {120,110,...,70}, producing a sawtooth cost surface; the greedy search terminates at ζ=0→1 and never reaches the true global minimum at ζ=32.
 
 Happy to share the full scan scripts/data if useful.
+## Proposed Fix (2026-08, added)
+
+### Why full step=1 enumeration is not a viable permanent fix
+Experiment 7's fully-resolved scan took ~6.9h combined for three parameter
+sets. This rules out full enumeration as a default estimator behavior — it
+would make routine security-margin verification (e.g. at CRYPTREC scale,
+across dozens of parameter sets) impractical.
+
+### Design iterations (three attempts before a working design was found)
+
+**Attempt 1 — naive coarse-to-fine on zeta alone, t fully resolved.**
+Non-greedy coarse scan over zeta (step=10, fast t-search) to locate a
+candidate region, then a fine window around it with t resolved by full
+step=1 enumeration (as in Experiment 7). Correct (ML-KEM-512: zeta=14,
+t=34, log2(rop)=139.057, exact match), but only ~2x faster than full
+enumeration (3159.9s vs 6201s) — the fine window still inherits the large
+t_max near zeta=0, so most of the savings from skipping most of the zeta
+range were eaten by the remaining exhaustive t-scans.
+
+**Attempt 2 — greedy zeta search with fully-resolved t (t_step=1 via
+`early_abort_range` instead of the internal step=10).** Hypothesis: if the
+t-sawtooth (Experiment 6) is the only source of non-convexity, resolving t
+more finely should make the zeta cost curve smooth enough for a plain
+greedy search. Result: **falsified**. The greedy zeta search still
+terminated at zeta=0/1 (26.5s, `MISMATCH` — true optimum is zeta=14). The
+zeta cost curve has genuine local non-convexity independent of t
+resolution (consistent with the ~1.7-bit amplitude non-convexity already
+noted in Experiment 2) — a non-greedy exhaustive pass over zeta candidates
+is unavoidable.
+
+**Attempt 3 — greedy *t* search (via `early_abort_range`, step=1) inside
+an otherwise-correct non-greedy zeta scan.** Hypothesis: t itself, for a
+*fixed* zeta, might be unimodal even though zeta is not. Result: **also
+falsified**. At zeta=14, greedy t-search reported log2(rop)=139.554 versus
+the true 139.057 (0.5-bit error) — t has local non-convexity too, at fixed
+zeta. Exhaustive t search cannot be replaced by a greedy search at any
+level.
+
+### Final design: recursive non-greedy coarse-to-fine (zeta and t), parallelized
+
+Since neither zeta nor t admits a greedy search, the same "non-greedy
+coarse pass + boundary-expanding fine pass" pattern proposed for zeta in
+the original draft of this section is applied **twice, recursively**:
+
+1. **Zeta, coarse:** scan zeta over `[0, n)` at step=10, evaluating every
+   point (no early-abort) using the fast per-zeta cost (t via
+   `early_abort_range`, step=10) — this stage does not need to be exact,
+   only good enough to locate the right neighborhood.
+2. **Zeta, fine:** for each zeta in a window around the coarse candidate
+   (initial width 15, doubling on boundary hits, capped at 3 doublings),
+   compute an accurate per-zeta cost using:
+3. **t, coarse:** scan t over `[0, n-zeta)` at step=10, evaluating every
+   point (no early-abort).
+4. **t, fine:** window (width 15, doubling on boundary hits, capped at 3
+   doublings) around the t coarse candidate, step=1.
+5. **Parallelization:** the zeta-fine stage's per-zeta evaluations are
+   independent and are distributed across a `multiprocessing.Pool`. No
+   algorithmic change, no accuracy cost — this only reduces wall-clock
+   time.
+
+Steps 3–4 mirror steps 1–2 exactly, one level down. This is the same
+pattern already validated for zeta, now shown to be necessary (not
+optional) for t as well.
+
+### Validation results
+
+All three ML-KEM parameter sets reproduce Experiment 7's confirmed global
+optima exactly (zeta, t, and log2(rop) match to the values reported
+there):
+
+| Parameter    | zeta | t  | log2(rop) | Match | Time (this design) | Time (Exp. 7, full enum.) | Speedup |
+| ------------ | ---- | -- | --------- | ----- | ------------------- | -------------------------- | ------- |
+| ML-KEM-512   | 14   | 34 | 139.057   | OK    | 97.2s               | ~6201s                     | ~64x    |
+| ML-KEM-768   | 23   | 59 | 195.554   | OK    | 123.0s              | ~7001s                     | ~57x    |
+| ML-KEM-1024  | 32   | 82 | 261.143   | OK    | 155.7s              | ~11658s                    | ~75x    |
+| **Combined** |      |    |           | **OK**| **376.9s (6m17s)**  | **~24840s (6.9h)**         | **~66x**|
+
+Exact match to Experiment 7 on all three parameter sets, at roughly 1/66th
+of the wall-clock cost, on a 32-core machine.
+
+### Complexity comparison (revised)
+
+The original draft of this section (Section 5.0 as originally written)
+claimed an "order-of-magnitude" speedup from a single-level coarse+fine
+design based on an asymptotic argument alone; that claim did not survive
+contact with measurement (Attempt 1 above measured only ~2x). The
+recursive two-level design plus parallelization is what actually delivers
+the improvement, and only the measured numbers above should be cited going
+forward — not the earlier asymptotic estimate.
+
+### Reproducibility
+All experiments in this section use lattice-estimator (main branch, as of
+2026-08), SageMath, run on a 32-core container. The script auto-detects
+available cores via `os.cpu_count()` rather than hardcoding a core count,
+so wall-clock time will scale with whatever hardware it runs on. Script:
+`results/1_core/verify_parallel_v2.sage` (contains both the fast per-zeta
+cost function used for coarse passes and the recursive two-level t-search
+used for fine passes; parallelizes the zeta-fine stage via
+`multiprocessing.Pool`).
+
+Earlier falsified variants are kept for the record:
+`results/1_core/verify_fine_t_hypothesis.sage` (Attempt 2 — greedy zeta,
+falsified) and `results/1_core/test_t_two_level.sage` (single-zeta
+validation of the working two-level t-search, used to confirm Attempt 3's
+failure and motivate the final design).
+
+### Open follow-up
+- Confirm this design scales similarly for ML-DSA and NTRU+ parameter
+  sets (Section 3's full 42-set list), not just the three ML-KEM sizes
+  tested here.
+- The initial window (15) and coarse step (10) were chosen to match the
+  t-sawtooth period identified in Experiment 6; a smaller coarse step
+  might further reduce the (small) residual boundary-doubling overhead
+  seen in the ML-KEM-1024 case.
+- Consider filing the recursive coarse-to-fine design, alongside the
+  original bug report, as a proposed patch to `malb/lattice-estimator`'s
+  `MATZOV.__call__`.

@@ -1,3 +1,4 @@
+import os
 import time
 from multiprocessing import Pool
 from estimator import *
@@ -86,7 +87,9 @@ def _fine_worker(zeta):
     return (zeta, log2rop, int(r.get("t")), int(r.get("beta")))
 
 
-def fine_scan_parallel(params, center, window, nproc=32):
+def fine_scan_parallel(params, center, window, nproc=None):
+    if nproc is None:
+        nproc = os.cpu_count() or 4
     n = params.n
     lo = max(0, center - window)
     hi = min(n - 1, center + window)
@@ -94,7 +97,7 @@ def fine_scan_parallel(params, center, window, nproc=32):
     t0 = time.time()
     with Pool(processes=min(nproc, len(zetas)), initializer=_init_worker, initargs=(params,)) as pool:
         results = pool.map(_fine_worker, zetas)
-    print(f"  [fine_parallel] {len(zetas)} zeta points in {time.time()-t0:.1f}s", flush=True)
+    print(f"  [fine_parallel] {len(zetas)} zeta points in {time.time()-t0:.1f}s (nproc={nproc})", flush=True)
     for zeta, log2rop, t, beta in sorted(results):
         print(f"    zeta={zeta}, log2(rop)={log2rop:.3f}, t={t}", flush=True)
     zeta_opt, rop_opt, t_opt, beta_opt = min(results, key=lambda x: x[1])
@@ -102,7 +105,9 @@ def fine_scan_parallel(params, center, window, nproc=32):
     return zeta_opt, rop_opt, t_opt, beta_opt, hit_boundary
 
 
-def two_stage_search(params, coarse_step=10, initial_window=15, max_doublings=3, nproc=32):
+def two_stage_search(params, coarse_step=10, initial_window=15, max_doublings=3, nproc=None):
+    if nproc is None:
+        nproc = os.cpu_count() or 4
     t0 = time.time()
     zeta_c, rop_c, coarse_results = coarse_scan(params, step=coarse_step)
     print(f"  coarse landed at zeta={zeta_c}", flush=True)
@@ -136,7 +141,7 @@ GROUND_TRUTH = {
 
 def main():
     for name, params in PARAM_SETS.items():
-        result = two_stage_search(params, nproc=32)
+        result = two_stage_search(params)
         gt = GROUND_TRUTH[name]
         zeta_match = (result["zeta"] == gt["zeta"])
         rop_close = abs(result["log2_rop"] - gt["log2_rop"]) < 0.05

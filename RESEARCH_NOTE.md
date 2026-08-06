@@ -556,3 +556,85 @@ failure and motivate the final design).
 - Consider filing the recursive coarse-to-fine design, alongside the
   original bug report, as a proposed patch to `malb/lattice-estimator`'s
   `MATZOV.__call__`.
+## Bug Scope Beyond ML-KEM (2026-08, added)
+
+The Proposed Fix section above validates the recursive coarse-to-fine
+design on ML-KEM only. Two natural questions follow: does the underlying
+bug (Section 5.0 / Appendix) affect other lattice-based schemes, and does
+the fix generalize? Both were tested directly rather than assumed.
+
+### NTRU is not affected
+
+`NTRU.dual_hybrid` and `LWE.dual_hybrid` (the MATZOV instance carrying the
+`early_abort_range(step=10)` bug) are **different function objects**
+(`NTRU.dual_hybrid is LWE.dual_hybrid` → `False`). Inspecting
+`NTRU.dual_hybrid`'s source shows it dispatches to a generic `DH`
+optimizer controlled by `opt_step` (default 8), not the MATZOV-specific
+greedy ζ/t search. NTRU parameter sets (NTRUHPS/HRSS) were therefore
+**not** re-tested with the fix, since there is no bug at that code path
+to fix.
+
+### ML-DSA is affected
+
+ML-DSA's MLWE key-recovery parameters are not built into
+`lattice-estimator`'s `schemes` module (only `_MSIS_*` forgery parameters
+are). Constructed manually per FIPS 204 (k, l, η) triples, following the
+standard convention n = l·256, m = k·256, q = 8380417,
+Xs = Xe = `ND.UniformMod(η)`:
+
+| Parameter | Default ζ | True ζ | Default log2(rop) | True log2(rop) | Gap (bits) |
+| --------- | --------- | ------ | ------------------ | -------------- | ---------- |
+| ML-DSA-44 | 10        | 23     | 126.682             | 126.337         | 0.345      |
+| ML-DSA-65 | 20        | 21     | 180.456             | 179.992         | 0.464      |
+| ML-DSA-87 | 0         | 13     | 225.521             | 225.255         | 0.266      |
+
+All three show a real gap in the same direction as ML-KEM. Notably,
+ML-DSA-65's ζ changes by only 1 (20→21) yet has the largest gap of the
+three (0.464 bits) — the artifact is driven by t's re-optimization
+granularity at least as much as by which ζ is selected.
+
+Script: `results/1_core/verify_dsa_all.sage`.
+
+### NTRU+ (KpqC) is affected — unlike NIST NTRU
+
+NTRU+ differs from NIST NTRU in a way that matters here: its security
+paper states that RLWE-based security is estimated using
+`lattice-estimator`, in addition to a separate NTRU-problem estimate.
+Constructing NTRU+576 (n=576, q=3457, approximated as binary secret +
+sparse ternary error) and calling `LWE.dual_hybrid` directly confirms it
+routes through the buggy MATZOV path:
+
+| Parameter | Default ζ | True ζ | Default log2(rop) | True log2(rop) | Gap (bits) |
+| --------- | --------- | ------ | ------------------ | --------------- | ---------- |
+| NTRU+576  | 20        | 26     | 130.716             | 130.588          | 0.128      |
+
+(Distribution is an approximation, not a certified match to the NTRU+
+spec's exact sampling — this establishes the code path is affected, not
+a certified security number.) Script: `results/1_core/test_ntruplus.sage`.
+
+### FrodoKEM — largest gap found in the entire study
+
+FrodoKEM is built into `lattice-estimator`'s `schemes` module
+(`Frodo640`, `Frodo976`, `Frodo1344`), so these results carry the same
+confidence as the ML-KEM results — no manual parameter construction.
+
+| Parameter    | Default ζ, t | Default log2(rop) | True ζ, t | True log2(rop) | Gap (bits) |
+| ------------ | ------------ | ------------------- | --------- | --------------- | ---------- |
+| Frodo640     | 10, 0        | 170.146              | 13, 0     | 169.326          | 0.821      |
+| **Frodo976** | **20, 0**    | **231.495**          | **17, 43**| **223.513**      | **7.981**  |
+| Frodo1344    | 30, 60       | 281.739              | 28, 69    | 281.271          | 0.468      |
+
+Frodo976 is qualitatively different from every other case in this study:
+the default search concludes t=0 is optimal (no benefit from the FFT
+distinguisher), while the true optimum uses t=43 and is 7.981 bits
+cheaper (~253x in cost). This is a wrong conclusion about which attack
+technique applies, not just an imprecise number.
+
+Script: `results/1_core/verify_frodo_all.sage`.
+
+### Updated conclusion
+The bug affects every `LWEParameters`-based scheme tested that routes
+through `LWE.dual_hybrid` (ML-KEM, ML-DSA, NTRU+, FrodoKEM), with gaps
+ranging from 0.128 to **7.981** bits depending on parameters. It does not
+affect NTRU (HPS/HRSS), whose dual-hybrid estimation bypasses MATZOV via
+a separate function (`NTRU.dual_hybrid`).

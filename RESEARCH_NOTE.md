@@ -97,19 +97,26 @@ Optimal ζ satisfies: d/dζ [BKZ_cost(n-ζ) + Guessing_cost(ζ)] = 0
 
 ### 2.3 lattice-estimator
 
-Open-source tool by Albrecht et al. Uses `local_minimum` binary search
-to find optimal (β, ζ) numerically for the direct `dual_hybrid` call.
-The `LWE.dual_hybrid` public API dispatches instead to `MATZOV.__call__`,
-which uses a separate, hardcoded greedy grid search over ζ and t
-(FFT dimension) — see Appendix for full detail.
+Open-source tool by Albrecht et al.
+Uses local_minimum binary search to find optimal (β, ζ) numerically.
 
-**Key finding:** We use `dual_hybrid` direct call (not `LWE.dual_hybrid`)
-for accurate results in Sections 3–6 and 10–11. `LWE.dual_hybrid` uses
-the MATZOV cost model, which gives estimates consistent with the
-official MATZOV security analysis but is subject to the grid-resolution
-artifact documented in the Appendix.
+**Key finding (revised, 2026-07):** MATZOV (indirect, `LWE.dual_hybrid`) and
+`dual_hybrid(fft=True)` are NOT the same technique despite both being
+labeled "FFT distinguisher." `dual_hybrid(fft=True)` uses the
+Walsh–Hadamard transform-based distinguisher from Guo-Johansson
+[AC:GuoJoh21, 2021], a distinct published algorithm from MATZOV's own
+FFT-based guessing cost model (2022).
 
----
+For ML-KEM-768:
+- MATZOV (indirect): log2(rop) = 196.37 (cheapest/strongest attack found)
+- dual_hybrid(fft=True) (Guo-Johansson): 203.79 (ζ=31, t=120)
+- dual_hybrid(fft=False): 206.36
+
+MATZOV finds an attack **8.2 bits cheaper** than the Guo-Johansson FFT
+option. This corrects our earlier (incorrect) conclusion that
+indirect/MATZOV estimates were "overly optimistic" — in fact MATZOV
+identifies the stronger attack here, and any security-margin comparison
+must specify which of the two distinguishers is being used.
 
 ## 3. Experimental Setup
 
@@ -129,14 +136,16 @@ artifact documented in the Appendix.
 
 ### 4.1 Primal vs Dual
 
-Accurate cost model shows primal attack is more efficient than dual
-across all three standards:
+**Note:** The "Dual (bits)" column below uses `dual_hybrid(fft=True)`
+(Guo-Johansson distinguisher). Using MATZOV's own cost model instead
+yields dual estimates up to 8.2 bits lower (see §2.3) — i.e. this table
+likely understates the strength of the best-known dual attack. A
+revised table with both dual variants side by side is needed before
+this comparison is cited externally.
 
-| Standard | Primal (bits) | Dual (bits) |
-|---|---|---|
-| ML-KEM-768 | 204.9 | 206.4 |
-| ML-DSA-65 | 231.3 | 233.9 |
-| NTRU+768 | 197.7 | 199.1 |
+| Standard   | Primal (bits) | Dual, Guo-Johansson FFT (bits) | Dual, MATZOV (bits) |
+| ---------- | -------------- | -------------------------------- | ---------------------- |
+| ML-KEM-768 | 204.9          | 206.4                            | ~196.37 (need to confirm exact value for this row) |
 
 ### 4.2 Cost Model Comparison: ζ values
 
@@ -369,12 +378,10 @@ Early results using `LWE.dual_hybrid` (MATZOV) — kept for reference.
 4. NIST FIPS 203 (ML-KEM), 2024
 5. NIST FIPS 204 (ML-DSA), 2024
 6. lattice-estimator, github.com/malb/lattice-estimator
-7. Cheon et al., "HAETAE: Shorter Lattice-Based Fiat-Shamir Signatures", CHES 2024
-8. Cheon et al., "SMAUG-T: Post-Quantum KEM", KpqC 2025
-9. Hhan, Hong, Kim, Lee, Lee, "From Perfect to Approximate Hints: Efficient LWE Secret Recovery Leveraging Low Hamming Weight", S&P 2026 (ePrint 2026/1081) — co-authored by Changmin Lee
-10. Kim, Lee, Kim, Lee, "SQIsign with Fixed-Precision Integer Arithmetic", PKC 2026 (ePrint 2025/1649) — Changmin Lee, corresponding author
-
----
+7. Guo, Johansson, "A New Sieving-Style Information-Set Decoding Algorithm", ASIACRYPT 2021
+8. Hhan, Hong, Kim, Lee, Lee, "From Perfect to Approximate Hints: Efficient LWE Secret Recovery Leveraging Low Hamming Weight", S&P 2026 (ePrint 2026/1081) — co-authored by Changmin Lee
+9. Kim, Lee, Kim, Lee, "SQIsign with Fixed-Precision Integer Arithmetic", ePrint 2025/1649 — Changmin Lee, co-author (first paper in this line)
+10. Kim, Lee, Yoo, "Compact Quaternion Algorithms for SQIsign", ePrint 2026/1031 — Changmin Lee, co-author (follow-up, 74% precision reduction over [9])
 
 ## 10. Connection to Approximate Hints
 

@@ -167,17 +167,7 @@ parameters. `dual_hybrid` direct call finds larger ζ values without
 FFT assumption. ML-KEM-512 and ML-KEM-1024 show ζ=0 under MATZOV —
 meaning no dimension reduction is optimal when FFT is available.
 
-**Resolved (see Appendix, 2026-07):** the indirect call's ζ=0 output
-for ML-KEM-512/1024 is confirmed to be partly a search-resolution
-artifact, not purely a consequence of the FFT assumption. Full
-enumeration shows the true MATZOV-model optimum is ζ=16 (ML-KEM-512)
-and ζ=34 (ML-KEM-1024), not ζ=0 — a gap of 0.36 and 1.08 bits
-respectively. For ML-KEM-768 the gap is smaller (0.23 bits, true
-optimum ζ=24 vs reported ζ=20). The FFT-assumption difference
-(Section 4.2 table above) remains the dominant driver of the ζ=20-vs-32
-style gaps; the grid-resolution artifact is a separate, smaller,
-independently confirmed effect on top of it.
-
+Resolved (see Appendix, 2026-07): the indirect call's ζ=0 output for ML-KEM-512/1024 is confirmed to be partly a search-resolution artifact. Full ζ×t enumeration shows the true MATZOV-model optimum is ζ=14 (ML-KEM-512, gap 0.60 bits), ζ=23 (ML-KEM-768, gap 0.81 bits), and ζ=32 (ML-KEM-1024, gap 1.19 bits).
 ### 4.3 ζ scales with n/log2(q)
 
 ζ/n ≈ 0.030 + 0.096/√(n/log2(q))
@@ -286,15 +276,7 @@ reported bit-security, or only ζ itself?
 `opt_step`-independent (tested opt_step ∈ {1,2,4,8,16,32}, identical
 result each time). For the MATZOV call path, the grid artifact is real
 and quantified: ML-KEM-512 gap 0.36 bits, ML-KEM-768 gap 0.23 bits,
-ML-KEM-1024 gap 1.08 bits. Mechanism identified: MATZOV's internal t
-(FFT dimension) search is hardcoded to step in units of 10, producing a
-sawtooth cost surface; the greedy search can terminate at a local rise
-before reaching a lower minimum in a later block. See Appendix for full
-derivation. This means the ~10-bit ML-KEM-768 spread in Section 11 is
-predominantly a real FFT-assumption modeling uncertainty, not primarily
-an estimator artifact — the estimator artifact contributes only ≤0.23
-bits of that spread for ML-KEM-768 (larger, up to 1.08 bits, for
-ML-KEM-1024).
+ML-KEM-1024 gap 1.08 bits. Mechanism identified: MATZOV's internal t (FFT dimension) search is hardcoded to step in units of 10, producing a sawtooth cost surface. Full ζ×t resolution (Experiment 7) gives confirmed gaps of 0.60 bits (ML-KEM-512), 0.81 bits (ML-KEM-768), and 1.19 bits (ML-KEM-1024) — larger than the preliminary step=10-in-t figures (0.36/0.23/1.08), which understated the artifact.
 
 **Mathematical proof of η^(1/3):** Prove that guessing cost in dual
 hybrid scales as σ^(2/3). Direct verification shows LHS/RHS ≈ 2~3 (not
@@ -383,7 +365,7 @@ Early results using `LWE.dual_hybrid` (MATZOV) — kept for reference.
 9. Kim, Lee, Kim, Lee, "SQIsign with Fixed-Precision Integer Arithmetic", ePrint 2025/1649 — Changmin Lee, co-author (first paper in this line)
 10. Kim, Lee, Yoo, "Compact Quaternion Algorithms for SQIsign", ePrint 2026/1031 — Changmin Lee, co-author (follow-up, 74% precision reduction over [9])
 
-## 10. Connection to Approximate Hints
+## 10. Connection to Approximate Hints **Note on methodology:** The hint model below (reducing effective dimension n → n−h) is a rough approximation motivated by the existence of hints, not a reproduction of Hhan et al.'s actual algorithm — their Algorithm 3 is a correlation-based method that does not use lattice reduction at all. A more accurate analysis would require the DBDD framework.
 
 ### Motivation
 
@@ -425,7 +407,7 @@ FFT distinguisher (MATZOV) is realistically implementable.
 - Of this uncertainty, ≤0.23 bits (ML-KEM-768) is attributable to the
   MATZOV grid-resolution artifact (Appendix); the remainder is a
   genuine open question about FFT distinguisher realizability.
-
+- Of this uncertainty, ≤0.81 bits (ML-KEM-768) is attributable to the MATZOV grid-resolution artifact (Appendix); the remainder is a genuine open question about FFT distinguisher realizability.
 ### Open Question
 
 What is the realistic implementation cost of the FFT distinguisher?
@@ -640,15 +622,15 @@ happens to land on a local rise, the search terminates immediately and
 reports ζ=0, even when much lower-cost points exist at larger ζ in
 later blocks.
 
-Reproduced for ML-KEM-512, ML-KEM-768, and ML-KEM-1024 (full ζ
-enumeration vs default `LWE.dual_hybrid` output):
+Reproduced for ML-KEM-512, ML-KEM-768, and ML-KEM-1024 (full ζ×t enumeration vs default LWE.dual_hybrid output):
 
-| Parameter | Default (MATZOV) ζ | True optimum ζ (full scan) | log2(rop) gap |
-|---|---|---|---|
-| ML-KEM-512  | 0  | 16 | 0.36 |
-| ML-KEM-768  | 20 | 24 | 0.23 |
-| ML-KEM-1024 | 0  | 34 | 1.08 |
+| Parameter   | Default (MATZOV) ζ | True optimum ζ (full ζ×t scan) | log2(rop) gap |
+|-------------|---------------------|----------------------------------|----------------|
+| ML-KEM-512  | 0                   | 14 (t=34, β=385)                 | 0.60           |
+| ML-KEM-768  | 20                  | 23 (t=59, β=586)                 | 0.81           |
+| ML-KEM-1024 | 0                   | 32 (t=82, β=819)                 | 1.19           |
 
+Minimal repro (ML-KEM-1024): full enumeration of ζ and t (step=1) shows the tool's internal `early_abort_range(step=10)` restricts t to values {120,110,...,70}, producing a sawtooth cost surface; the greedy search terminates at ζ=0→1 and never reaches the true global minimum at ζ=32.
 Minimal repro (ML-KEM-1024): full enumeration of ζ=0..40 (step=1) shows
 t taking only values {120,110,...,70}, with cost rising at each block
 boundary and a global minimum at ζ=34 that the default greedy search

@@ -124,12 +124,24 @@ def two_stage_search(params, coarse_step=10, initial_window=15, max_doublings=3,
 
 PARAM_SETS = {
     "ML-KEM-512": LWE.Parameters(n=512, q=3329, Xs=ND.CenteredBinomial(3), Xe=ND.CenteredBinomial(3), tag="ML-KEM-512").normalize(),
+    "ML-KEM-768": LWE.Parameters(n=768, q=3329, Xs=ND.CenteredBinomial(2), Xe=ND.CenteredBinomial(2), tag="ML-KEM-768").normalize(),
+    "ML-KEM-1024": LWE.Parameters(n=1024, q=3329, Xs=ND.CenteredBinomial(2), Xe=ND.CenteredBinomial(2), tag="ML-KEM-1024").normalize(),
 }
 
 GROUND_TRUTH = {
     "ML-KEM-512": dict(zeta=14, t=34, log2_rop=139.057),
+    "ML-KEM-768": dict(zeta=23, t=59, log2_rop=195.554),
+    "ML-KEM-1024": dict(zeta=32, t=82, log2_rop=261.143),
 }
 
 def main():
     for name, params in PARAM_SETS.items():
-        result =
+        result = two_stage_search(params, nproc=32)
+        gt = GROUND_TRUTH[name]
+        zeta_match = (result["zeta"] == gt["zeta"])
+        rop_close = abs(result["log2_rop"] - gt["log2_rop"]) < 0.05
+        match = "OK" if (zeta_match and rop_close) else "MISMATCH"
+        print(f"{name}: zeta={result['zeta']} t={result['t']} log2(rop)={result['log2_rop']:.3f}  GT zeta={gt['zeta']} GT log2(rop)={gt['log2_rop']}  match={match}  time={result['elapsed_s']:.1f}s")
+
+if __name__ == "__main__":
+    main()

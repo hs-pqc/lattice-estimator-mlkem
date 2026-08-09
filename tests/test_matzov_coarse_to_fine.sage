@@ -19,6 +19,9 @@
 import sys
 import os
 
+from estimator import *
+
+# Sage preparses .sage files to a temporary .py before running them, and __file__
 # Sage preparses .sage files to a temporary .py before running them, and __file__
 # has been observed to occasionally not resolve to this file's real directory
 # depending on how `sage tests/test_matzov_coarse_to_fine.sage` is invoked. Fall

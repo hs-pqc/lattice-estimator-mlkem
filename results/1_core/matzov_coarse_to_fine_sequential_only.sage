@@ -12,6 +12,11 @@
 #
 # See matzov_coarse_to_fine.sage's header comment for the full problem/fix
 # description (sawtooth cost surface, boundary safeguard, etc).
+#
+# NOTE: this file defines a function with the SAME name as matzov_coarse_to_fine.sage
+# (by design). Do not load() both in the same Sage session; the second load silently
+# overwrites the first. See tests/test_matzov_coarse_to_fine.sage for how to test
+# both safely.
 
 from estimator import *
 from estimator.lwe_dual import matzov, early_abort_range, local_minimum, max_beta_global, red_cost_model_default

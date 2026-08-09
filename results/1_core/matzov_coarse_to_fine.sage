@@ -16,10 +16,7 @@
 # search (observed for ML-KEM-512/768/1024, where the greedy search's coarse
 # estimate landed exactly at zeta=0 or a step boundary).
 #
-# This file is intentionally sequential and dependency-free (no multiprocessing)
-# so it can be dropped into estimator/lwe_dual.py with no new imports. A separate,
-# optional parallel wrapper is provided in matzov_coarse_to_fine_parallel.sage for
-# users who want the ~66x wall-clock speedup measured with 32-core parallelism.
+# Parallelism is opt-in via n_jobs (default None = sequential, no new dependency).
 
 from estimator import *
 from estimator.lwe_dual import matzov, early_abort_range, local_minimum, max_beta_global, red_cost_model_default
@@ -74,13 +71,24 @@ def _zeta_fixed_t_search(k_enum_val, params, red_cost_model=red_cost_model_defau
 
 
 def matzov_coarse_to_fine(params: LWEParameters, red_cost_model=red_cost_model_default,
-                           zeta_coarse_step=10, zeta_window=15, zeta_max_doublings=3):
+                           zeta_coarse_step=10, zeta_window=15, zeta_max_doublings=3,
+                           n_jobs=None):
     """
     Drop-in replacement for MATZOV.__call__ using coarse-to-fine search on both
     zeta and t instead of the fixed-step greedy search. Verified to reproduce the
     true global optimum for ML-KEM-512/768/1024 (matches full-enumeration ground
     truth to within 0.05 bits), where the original greedy search under-reports
     security by 0.60/0.81/1.19 bits respectively.
+
+    :param n_jobs: opt-in parallelism. ``None`` or ``1`` (default) runs fully
+        sequential with no new dependency and no process-pool overhead -- safe
+        for library use and for callers who never asked for parallelism. Set to
+        an integer > 1 (or -1 to use ``os.cpu_count()``) to parallelize the fine
+        zeta-scan across worker processes via ``multiprocessing.Pool``, which
+        measured ~66x faster wall-clock time on a 32-core machine. The coarse
+        pass always runs sequentially (it is a small fraction of total cost, see
+        PR_DESCRIPTION.md) so the ``n_jobs=None`` and ``n_jobs>1`` code paths
+        return bit-identical results -- parallelism only changes wall-clock time.
     """
     params = params.normalize()
     n = params.n
@@ -95,10 +103,21 @@ def matzov_coarse_to_fine(params: LWEParameters, red_cost_model=red_cost_model_d
     doublings = 0
     while True:
         lo, hi = max(0, zeta_c - window), min(n - 1, zeta_c + window)
-        fine_results = [
-            (zeta, _zeta_fixed_t_search(zeta, params, red_cost_model))
-            for zeta in range(lo, hi + 1)
-        ]
+        zetas = list(range(lo, hi + 1))
+
+        if n_jobs is None or n_jobs == 1:
+            fine_results = [(zeta, _zeta_fixed_t_search(zeta, params, red_cost_model)) for zeta in zetas]
+        else:
+            import os
+            from multiprocessing import Pool
+            nproc = os.cpu_count() if n_jobs == -1 else n_jobs
+            with Pool(processes=min(nproc, len(zetas))) as pool:
+                fine_results = pool.starmap(
+                    _zeta_fixed_t_search,
+                    [(zeta, params, red_cost_model) for zeta in zetas],
+                )
+                fine_results = list(zip(zetas, fine_results))
+
         zeta_opt, best = min(fine_results, key=lambda x: x[1]["rop"])
         if not (zeta_opt == lo or zeta_opt == hi) or doublings >= zeta_max_doublings:
             return best

@@ -79,7 +79,7 @@ def run():
     for name, params in PARAM_SETS.items():
         gt = GROUND_TRUTH[name]
         greedy = DEFAULT_GREEDY[name]
-        result = matzov_coarse_to_fine(params)  # n_jobs=None (default, sequential)
+        result = matzov_coarse_to_fine(params, verbose=True)  # n_jobs=None (default, sequential)
         njobs_results[name] = result
         log2_rop = float(log(result["rop"], 2).n())
         zeta_ok = (int(result["zeta"]) == gt["zeta"])

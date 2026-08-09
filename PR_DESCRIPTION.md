@@ -108,8 +108,16 @@ makes warm-start safe is exactly what makes it not actually save any work.
 
 ## Files in this PR
 
-- `results/1_core/matzov_coarse_to_fine.sage` — the core fix, dependency-free
+- `results/1_core/matzov_coarse_to_fine.sage` — the core fix. No new dependency
+  on the default path (`n_jobs=None`); `multiprocessing` is only imported if the
+  caller opts into `n_jobs`.
+- `results/1_core/matzov_coarse_to_fine_sequential_only.sage` — functionally
+  identical alternative with zero multiprocessing code anywhere in the file, not
+  even opt-in. Offered in case the maintainer prefers no process-pool code in
+  the core library on principle. Pick one, not both — see the note at the top of
+  `tests/test_matzov_coarse_to_fine.sage` about why they share a function name.
 - `tests/test_matzov_coarse_to_fine.sage` — regression test against confirmed
-  ground truth
+  ground truth, covering both files above and the n_jobs sequential/parallel
+  consistency check
 - `results/1_core/verify_dsa_all.sage`, `verify_frodo_all.sage`,
   `test_ntruplus.sage` — cross-scheme validation scripts

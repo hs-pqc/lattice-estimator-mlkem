@@ -78,7 +78,7 @@ def _zeta_fixed_t_search(k_enum_val, params, red_cost_model=red_cost_model_defau
 
 def matzov_coarse_to_fine(params, red_cost_model=red_cost_model_default,
                            zeta_coarse_step=10, zeta_window=15, zeta_max_doublings=3,
-                           n_jobs=None):
+                           n_jobs=None, verbose=False):
     """
     Drop-in replacement for MATZOV.__call__ using coarse-to-fine search on both
     zeta and t instead of the fixed-step greedy search. Verified to reproduce the
@@ -95,15 +95,31 @@ def matzov_coarse_to_fine(params, red_cost_model=red_cost_model_default,
         pass always runs sequentially (it is a small fraction of total cost, see
         PR_DESCRIPTION.md) so the ``n_jobs=None`` and ``n_jobs>1`` code paths
         return bit-identical results -- parallelism only changes wall-clock time.
+    :param verbose: if True, print per-zeta progress with elapsed time. Off by
+        default (silent) for library use; turn on for long sequential runs
+        (single ML-KEM-768/1024 calls can take 30-50 minutes with n_jobs=None)
+        so the caller can see it's progressing rather than appearing hung.
     """
+    import time
+    t0 = time.time()
     params = params.normalize()
     n = params.n
 
-    coarse_results = [
-        (zeta, _zeta_fixed_t_search(zeta, params, red_cost_model))
-        for zeta in range(0, n, zeta_coarse_step)
-    ]
+    if verbose:
+        print(f"[matzov_coarse_to_fine] {params.tag}: starting coarse scan "
+              f"({len(range(0, n, zeta_coarse_step))} zeta values, step={zeta_coarse_step})", flush=True)
+
+    coarse_results = []
+    for i, zeta in enumerate(range(0, n, zeta_coarse_step)):
+        coarse_results.append((zeta, _zeta_fixed_t_search(zeta, params, red_cost_model)))
+        if verbose and (i + 1) % 5 == 0:
+            print(f"[matzov_coarse_to_fine] {params.tag}: coarse scan {i+1}/{len(range(0, n, zeta_coarse_step))} "
+                  f"done ({time.time()-t0:.1f}s elapsed)", flush=True)
     zeta_c = min(coarse_results, key=lambda x: x[1]["rop"])[0]
+
+    if verbose:
+        print(f"[matzov_coarse_to_fine] {params.tag}: coarse landed at zeta={zeta_c} "
+              f"({time.time()-t0:.1f}s elapsed)", flush=True)
 
     window = zeta_window
     doublings = 0
@@ -111,8 +127,18 @@ def matzov_coarse_to_fine(params, red_cost_model=red_cost_model_default,
         lo, hi = max(0, zeta_c - window), min(n - 1, zeta_c + window)
         zetas = list(range(lo, hi + 1))
 
+        if verbose:
+            print(f"[matzov_coarse_to_fine] {params.tag}: starting fine scan, window={window} "
+                  f"({len(zetas)} zeta values, doubling #{doublings}) "
+                  f"({time.time()-t0:.1f}s elapsed)", flush=True)
+
         if n_jobs is None or n_jobs == 1:
-            fine_results = [(zeta, _zeta_fixed_t_search(zeta, params, red_cost_model)) for zeta in zetas]
+            fine_results = []
+            for i, zeta in enumerate(zetas):
+                fine_results.append((zeta, _zeta_fixed_t_search(zeta, params, red_cost_model)))
+                if verbose and (i + 1) % 5 == 0:
+                    print(f"[matzov_coarse_to_fine] {params.tag}: fine scan {i+1}/{len(zetas)} done "
+                          f"({time.time()-t0:.1f}s elapsed)", flush=True)
         else:
             import os
             from multiprocessing import Pool
@@ -123,9 +149,15 @@ def matzov_coarse_to_fine(params, red_cost_model=red_cost_model_default,
                     [(zeta, params, red_cost_model) for zeta in zetas],
                 )
                 fine_results = list(zip(zetas, fine_results))
+            if verbose:
+                print(f"[matzov_coarse_to_fine] {params.tag}: parallel fine scan done "
+                      f"({time.time()-t0:.1f}s elapsed)", flush=True)
 
         zeta_opt, best = min(fine_results, key=lambda x: x[1]["rop"])
         if not (zeta_opt == lo or zeta_opt == hi) or doublings >= zeta_max_doublings:
+            if verbose:
+                print(f"[matzov_coarse_to_fine] {params.tag}: DONE, zeta={zeta_opt} "
+                      f"(total {time.time()-t0:.1f}s)", flush=True)
             return best
         window *= 2
         doublings += 1

@@ -70,7 +70,7 @@ def _zeta_fixed_t_search(k_enum_val, params, red_cost_model=red_cost_model_defau
     return p[1].y
 
 
-def matzov_coarse_to_fine(params: LWEParameters, red_cost_model=red_cost_model_default,
+def matzov_coarse_to_fine(params, red_cost_model=red_cost_model_default,
                            zeta_coarse_step=10, zeta_window=15, zeta_max_doublings=3):
     """
     Drop-in replacement for MATZOV.__call__ using coarse-to-fine search on both

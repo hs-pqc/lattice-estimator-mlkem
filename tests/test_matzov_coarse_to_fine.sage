@@ -40,9 +40,11 @@ TOLERANCE_BITS = 0.05
 
 def run():
     failures = []
+    seq_results = {}
     for name, params in PARAM_SETS.items():
         gt = GROUND_TRUTH[name]
-        result = matzov_coarse_to_fine(params)
+        result = matzov_coarse_to_fine(params)  # n_jobs=None (default, sequential)
+        seq_results[name] = result
         log2_rop = float(log(result["rop"], 2).n())
         zeta_ok = (int(result["zeta"]) == gt["zeta"])
         rop_ok = abs(log2_rop - gt["log2_rop"]) < TOLERANCE_BITS
@@ -52,11 +54,25 @@ def run():
         if status == "FAIL":
             failures.append(name)
 
+    # n_jobs consistency: sequential (already computed above) vs parallel (n_jobs=-1)
+    # must return bit-identical results -- only wall-clock time should differ.
+    # Reuses seq_results instead of recomputing the sequential path a second time.
+    print("\n--- n_jobs consistency (sequential vs parallel must match exactly) ---")
+    for name, params in PARAM_SETS.items():
+        seq = seq_results[name]
+        par = matzov_coarse_to_fine(params, n_jobs=-1)
+        same_zeta = (int(seq["zeta"]) == int(par["zeta"]))
+        same_rop = (float(log(seq["rop"], 2).n()) == float(log(par["rop"], 2).n()))
+        status = "PASS" if (same_zeta and same_rop) else "FAIL"
+        print(f"[{status}] {name}: sequential zeta={seq['zeta']} vs parallel zeta={par['zeta']}")
+        if status == "FAIL":
+            failures.append(f"{name} (n_jobs consistency)")
+
     if failures:
         print(f"\n{len(failures)} test(s) FAILED: {failures}")
         sys.exit(1)
     else:
-        print(f"\nAll {len(PARAM_SETS)} tests PASSED.")
+        print(f"\nAll tests PASSED.")
 
 
 if __name__ == "__main__":

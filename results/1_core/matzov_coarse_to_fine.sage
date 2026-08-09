@@ -17,6 +17,12 @@
 # estimate landed exactly at zeta=0 or a step boundary).
 #
 # Parallelism is opt-in via n_jobs (default None = sequential, no new dependency).
+#
+# NOTE: matzov_coarse_to_fine_sequential_only.sage in this same directory defines
+# a function with the SAME name (by design -- both are drop-in candidates for
+# MATZOV.__call__). Do not load() both in the same Sage session; the second load
+# silently overwrites the first. See tests/test_matzov_coarse_to_fine.sage for
+# how to test both safely.
 
 from estimator import *
 from estimator.lwe_dual import matzov, early_abort_range, local_minimum, max_beta_global, red_cost_model_default

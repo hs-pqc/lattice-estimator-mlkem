@@ -106,6 +106,25 @@ We consider plain coarse-to-fine (without warm-starting) the right
 accuracy/complexity trade-off for a security-estimation tool: the safeguard that
 makes warm-start safe is exactly what makes it not actually save any work.
 
+## Verification status
+
+Ran end-to-end against a real Sage/estimator environment (2026-08):
+
+- `tests/test_matzov_coarse_to_fine.sage`: ML-KEM-512/768/1024 ground truth
+  (ζ=14/23/32) — **all PASS**
+- `n_jobs=None` vs `n_jobs=-1` consistency, ML-KEM-512 (real scheme) — **PASS**
+- `tests/test_n_jobs_smoke.sage`: `n_jobs=None` vs `n_jobs=-1` consistency on a
+  small synthetic instance — **PASS** (confirms the parallel path runs cleanly
+  under Sage's `load()`, including function pickling across worker processes)
+- `matzov_coarse_to_fine_sequential_only.sage` vs `matzov_coarse_to_fine.sage`
+  algorithmic equivalence — **PASS**
+
+Not yet independently re-confirmed: `n_jobs=-1` consistency on the full-size
+ML-KEM-768/1024 instances specifically (confirmed on ML-KEM-512 and on a
+synthetic instance instead, after a local environment interruption). The code
+path is identical across parameter sizes, so this is not expected to behave
+differently, but is noted here for completeness.
+
 ## Files in this PR
 
 - `results/1_core/matzov_coarse_to_fine.sage` — the core fix. No new dependency

@@ -597,20 +597,29 @@ Script: `results/1_core/verify_dsa_all.sage`.
 
 ### NTRU+ (KpqC) is affected — unlike NIST NTRU
 
-NTRU+ differs from NIST NTRU in a way that matters here: its security
-paper states that RLWE-based security is estimated using
-`lattice-estimator`, in addition to a separate NTRU-problem estimate.
-Constructing NTRU+576 (n=576, q=3457, approximated as binary secret +
-sparse ternary error) and calling `LWE.dual_hybrid` directly confirms it
-routes through the buggy MATZOV path:
+NTRU+ differs from NIST-standard NTRU in a way that matters here: its
+security paper states that RLWE-based security is estimated using
+`lattice-estimator`, whereas NIST NTRU is estimated purely as an NTRU
+problem via `NTRU.dual_hybrid` (a different function, confirmed above to
+bypass MATZOV entirely).
 
-| Parameter | Default ζ | True ζ | Default log2(rop) | True log2(rop) | Gap (bits) |
-| --------- | --------- | ------ | ------------------ | --------------- | ---------- |
-| NTRU+576  | 20        | 26     | 130.716             | 130.588          | 0.128      |
+Using the exact parameters from the NTRU+ paper (eprint 2022/1664) — 
+q=3457 for all four sizes, coefficients drawn from CenteredBinomial(η=1) —
+confirms all four NTRU+ sizes route through the buggy MATZOV path:
 
-(Distribution is an approximation, not a certified match to the NTRU+
-spec's exact sampling — this establishes the code path is affected, not
-a certified security number.) Script: `results/1_core/test_ntruplus.sage`.
+| Parameter    | Default ζ,t | Default log2(rop) | True ζ,t | True log2(rop) | Gap (bits) |
+| ------------ | ----------- | ------------------- | -------- | --------------- | ---------- |
+| NTRU+576     | 20, 50      | 135.176              | 22, 46   | 134.658          | 0.518      |
+| NTRU+768     | 0, 100      | 179.212              | 28, 66   | 178.122          | 1.090      |
+| NTRU+864     | 20, 90      | 200.602              | 34, 73   | 200.223          | 0.379      |
+| NTRU+1152    | 40, 110     | 268.523              | 44, 104  | 268.227          | 0.297      |
+
+An earlier estimate for NTRU+576 (0.128 bits) used an approximated
+distribution (binary secret + sparse ternary error) since the exact paper
+parameters weren't confirmed at the time; the corrected figure (0.518
+bits) is about 4x larger. NTRU+768 shows the same ζ=0 boundary-landing
+pattern seen in ML-KEM-512/1024 and ML-DSA-87. Script:
+`results/1_core/verify_ntruplus_all.sage`.
 
 ### FrodoKEM — largest gap found in the entire study
 

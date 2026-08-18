@@ -564,7 +564,19 @@ bug (Section 5.0 / Appendix) affect other lattice-based schemes, and does
 the fix generalize? Both were tested directly rather than assumed.
 
 ### NTRU is not affected
+### HAETAE (KpqC signature) is also not affected
 
+HAETAE's spec states its security estimates come from "a modification of
+the security estimator of Dilithium [DS20]" — not `lattice-estimator`.
+Inspecting the likely source, `pq-crystals/security-estimates` (maintained
+by the Kyber/Dilithium design team, not Albrecht et al.), confirms this:
+the repository has its own `model_BKZ.py`, `MLWE_security.py`, and
+`MSIS_security.py` — a fully self-contained implementation with no
+dependency on `lattice-estimator` (unlike other projects in this space,
+e.g. `openfhe-lattice-estimator`, which explicitly vendor it as a
+submodule). HAETAE therefore does not route through `LWE.dual_hybrid`/
+MATZOV and is not affected by this bug, for the same structural reason as
+NTRU (HPS/HRSS): it uses an entirely independent codebase.
 `NTRU.dual_hybrid` and `LWE.dual_hybrid` (the MATZOV instance carrying the
 `early_abort_range(step=10)` bug) are **different function objects**
 (`NTRU.dual_hybrid is LWE.dual_hybrid` → `False`). Inspecting
@@ -664,6 +676,6 @@ through `LWE.dual_hybrid` (ML-KEM, ML-DSA, NTRU+, FrodoKEM, Saber), with
 gaps ranging from 0.128 to **7.981** bits depending on parameters. Two
 cases (Frodo976, LightSaber) show the search landing on a qualitatively
 wrong conclusion (t=0, i.e. "FFT distinguisher is useless") rather than
-just an imprecise number. It does not affect NTRU (HPS/HRSS), whose
-dual-hybrid estimation bypasses MATZOV via a separate function
-(`NTRU.dual_hybrid`).
+just an imprecise number. It does not affect schemes that bypass MATZOV
+via an independent codebase — confirmed for NTRU (HPS/HRSS, via
+`NTRU.dual_hybrid`) and HAETAE (via `pq-crystals/security-estimates`).

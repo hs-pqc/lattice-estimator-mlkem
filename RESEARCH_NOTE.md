@@ -640,10 +640,30 @@ cheaper (~253x in cost). This is a wrong conclusion about which attack
 technique applies, not just an imprecise number.
 
 Script: `results/1_core/verify_frodo_all.sage`.
+### Saber (LightSaber/Saber/FireSaber) — second-largest gap in the study
 
+Saber's parameters are also built into `lattice-estimator`'s `schemes`
+module, requiring no manual construction.
+
+| Parameter      | Default ζ, t | Default log2(rop) | True ζ, t | True log2(rop) | Gap (bits) |
+| -------------- | ------------ | ------------------- | --------- | --------------- | ---------- |
+| **LightSaber** | **10, 0**    | **146.440**          | **12, 29**| **139.847**      | **6.594**  |
+| Saber          | 0, 70        | 204.866              | 21, 47    | 204.039          | 0.827      |
+| FireSaber      | 30, 70       | 267.301              | 28, 73    | 267.081          | 0.220      |
+
+LightSaber shows the same pattern as Frodo976: the default search
+concludes t=0 is optimal, while the true optimum (t=29) is 6.594 bits
+cheaper (~96.5x in cost) — again a qualitatively wrong conclusion about
+the FFT distinguisher's usefulness, not just an imprecise number. This is
+the second-largest gap found in the entire study.
+
+Script: `results/1_core/verify_saber_all.sage`.
 ### Updated conclusion
 The bug affects every `LWEParameters`-based scheme tested that routes
-through `LWE.dual_hybrid` (ML-KEM, ML-DSA, NTRU+, FrodoKEM), with gaps
-ranging from 0.128 to **7.981** bits depending on parameters. It does not
-affect NTRU (HPS/HRSS), whose dual-hybrid estimation bypasses MATZOV via
-a separate function (`NTRU.dual_hybrid`).
+through `LWE.dual_hybrid` (ML-KEM, ML-DSA, NTRU+, FrodoKEM, Saber), with
+gaps ranging from 0.128 to **7.981** bits depending on parameters. Two
+cases (Frodo976, LightSaber) show the search landing on a qualitatively
+wrong conclusion (t=0, i.e. "FFT distinguisher is useless") rather than
+just an imprecise number. It does not affect NTRU (HPS/HRSS), whose
+dual-hybrid estimation bypasses MATZOV via a separate function
+(`NTRU.dual_hybrid`).

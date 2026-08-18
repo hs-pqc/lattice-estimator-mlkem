@@ -670,12 +670,49 @@ the FFT distinguisher's usefulness, not just an imprecise number. This is
 the second-largest gap found in the entire study.
 
 Script: `results/1_core/verify_saber_all.sage`.
+### FHE-type parameters — first cases with zero gap
+
+FHE (fully homomorphic encryption) parameters are also built into
+`schemes` (CHHS, HElib, SEAL, TFHE, HESv1). Tested the smallest 13
+(n=500–1024) as a first batch — larger ones (n up to 131072) are deferred
+to a later session given the time cost observed here.
+
+| Parameter              | n    | Default ζ,t | Default log2(rop) | True ζ,t | True log2(rop) | Gap (bits) |
+| ----------------------- | ---- | ----------- | ------------------- | -------- | --------------- | ---------- |
+| TFHE16_500              | 500  | 20, 40      | 93.709               | 19, 44   | 93.511           | 0.198      |
+| Concrete_TFHE512        | 512  | 10, 30      | 64.833               | 13, 23   | 64.716           | 0.117      |
+| TFHE20_612              | 612  | 20, 60      | 114.928              | 21, 60   | 114.675          | 0.253      |
+| TFHE630                 | 630  | 10, 80      | 118.251              | 23, 61   | 117.752          | 0.500      |
+| TFHE16_1024             | 1024 | 10, 70      | 110.281              | 21, 56   | 110.059          | 0.222      |
+| TFHE20_1024             | 1024 | 10, 80      | 117.748              | 23, 62   | 117.636          | 0.112      |
+| TFHE1024                | 1024 | 0, 100      | 122.191              | 23, 63   | 121.865          | 0.326      |
+| **CHHS_1024_25**        | 1024 | 0, 100      | 122.456              | 0, 100   | 122.456          | **0.000**  |
+| **HElib80_1024**        | 1024 | 0, 50       | 69.703               | 0, 50    | 69.703           | **0.000**  |
+| **HElib120_1024**       | 1024 | 0, 60       | 84.048               | 0, 60    | 84.048           | **0.000**  |
+| SEAL20_1024             | 1024 | 10, 10      | 72.238               | 10, 13   | 72.100           | 0.138      |
+| **HESv111024128error**  | 1024 | 10, 0       | 140.471              | 10, 0    | 140.471          | **0.000**  |
+| HESv111024128ternary    | 1024 | 20, 40      | 125.851              | 18, 41   | 125.733          | 0.118      |
+
+Four of the thirteen (CHHS, HElib80, HElib120, HESv1-error) show **exact
+zero gap** — the default greedy search already lands on the true optimum.
+This is the first evidence that the sawtooth artifact does not affect
+every LWEParameters-based scheme uniformly: for some (q, noise
+distribution) combinations, the cost-vs-ζ curve apparently stays
+well-behaved enough that greedy search finds the true optimum anyway.
+Notably, the zero-gap cases took *longer* to verify (1008–1362s) than the
+nonzero-gap cases (60–250s), likely due to repeated boundary-expansion in
+the fine-scan window.
+
+Script: `results/1_core/verify_fhe_small.sage`.
 ### Updated conclusion
-The bug affects every `LWEParameters`-based scheme tested that routes
-through `LWE.dual_hybrid` (ML-KEM, ML-DSA, NTRU+, FrodoKEM, Saber), with
-gaps ranging from 0.128 to **7.981** bits depending on parameters. Two
-cases (Frodo976, LightSaber) show the search landing on a qualitatively
-wrong conclusion (t=0, i.e. "FFT distinguisher is useless") rather than
-just an imprecise number. It does not affect schemes that bypass MATZOV
-via an independent codebase — confirmed for NTRU (HPS/HRSS, via
-`NTRU.dual_hybrid`) and HAETAE (via `pq-crystals/security-estimates`).
+The bug affects every `LWEParameters`-based scheme tested so far that
+routes through `LWE.dual_hybrid` — ML-KEM, ML-DSA, NTRU+, FrodoKEM, Saber,
+and 9 of 13 tested FHE-type parameter sets — with gaps ranging from 0 to
+**7.981** bits depending on parameters. Four FHE-type cases showed exact
+zero gap, the first evidence the artifact isn't universal across every
+(q, noise distribution) combination. Two cases (Frodo976, LightSaber) show
+the search landing on a qualitatively wrong conclusion (t=0, i.e. "FFT
+distinguisher is useless") rather than just an imprecise number. It does
+not affect schemes that bypass MATZOV via an independent codebase —
+confirmed for NTRU (HPS/HRSS, via `NTRU.dual_hybrid`) and HAETAE (via
+`pq-crystals/security-estimates`).

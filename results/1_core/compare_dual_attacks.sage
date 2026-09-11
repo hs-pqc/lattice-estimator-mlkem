@@ -1,4 +1,3 @@
-cat > compare_dual_attacks.sage << 'SAGEEOF'
 """
 compare_dual_attacks.sage
 
@@ -230,4 +229,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-SAGEEOF

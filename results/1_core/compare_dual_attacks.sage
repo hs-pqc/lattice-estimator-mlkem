@@ -229,8 +229,17 @@ def main():
     out_dir = "results"
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, "dual_attack_comparison.json")
+           def _json_safe(o):
+        try:
+            return int(o)
+        except (TypeError, ValueError):
+            try:
+                return float(o)
+            except (TypeError, ValueError):
+                return str(o)
+
     with open(out_path, "w") as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
+        json.dump(results, f, indent=2, ensure_ascii=False, default=_json_safe)
     print(f"\n저장 완료: {out_path}")
 if __name__ == "__main__":
     main()

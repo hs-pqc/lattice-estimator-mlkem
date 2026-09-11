@@ -181,7 +181,7 @@ def compare_scheme_at_known_optimum(scheme_name, scheme_entry):
             elapsed = time.time() - t0
             row[algo_name] = {
                 "log2_rop": round(log2_rop, 3),
-                "zeta_found": raw.get("zeta"),
+                "zeta_found": int(raw.get("zeta")) if raw.get("zeta") is not None else None,
                 "seconds": round(elapsed, 3),
             }
         except Exception as e:
@@ -216,7 +216,7 @@ def main():
     with open(out_path, "w") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
-    print(f"\n{len(results)}개 스킴 결과 저장: {out_path}")
+        print(f"\n{len(results)}개 스킴 결과:")
     for row in results:
         print(f"\n{row['scheme']}:")
         for algo_name in ALGORITHMS:
@@ -226,6 +226,11 @@ def main():
             else:
                 print(f"  {algo_name}: zeta={v['zeta_found']}, log2(rop)={v['log2_rop']}, {v['seconds']}s")
 
-
+    out_dir = "results"
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "dual_attack_comparison.json")
+    with open(out_path, "w") as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+    print(f"\n저장 완료: {out_path}")
 if __name__ == "__main__":
     main()

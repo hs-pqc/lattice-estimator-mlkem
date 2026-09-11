@@ -83,7 +83,7 @@ for name, result in corrected_matzov.items():
 
 print()
 print("=" * 70)
-print("2. gap = MATZOV - GJ (양수: MATZOV가 더 싼 공격 / 음수: GJ가 더 싼 공격)")
+print("2. gap = MATZOV - GJ (음수: MATZOV가 더 싼 공격 / 양수: GJ가 더 싼 공격)")
 print("=" * 70)
 print(f"{'scheme':<14} {'n':>5} {'log2(q)':>8} {'gap(bit)':>10}")
 for name, params in ALL_SCHEMES_FOR_DIAGNOSIS.items():
@@ -91,5 +91,5 @@ for name, params in ALL_SCHEMES_FOR_DIAGNOSIS.items():
     gj_v = GJ_LOG2_ROP_FROM_FIRST_RUN[name]
     gap = matzov_v - gj_v
     log2q = float(log(params.q, 2).n())
-    flag = "  <-- 역전" if gap < 0 else ""
+    flag = "  <-- GJ 우위 (역전)" if gap > 0 else ""
     print(f"{name:<14} {params.n:>5} {log2q:>8.2f} {gap:>+10.3f}{flag}")

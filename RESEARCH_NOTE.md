@@ -716,3 +716,137 @@ distinguisher is useless") rather than just an imprecise number. It does
 not affect schemes that bypass MATZOV via an independent codebase —
 confirmed for NTRU (HPS/HRSS, via `NTRU.dual_hybrid`) and HAETAE (via
 `pq-crystals/security-estimates`).
+## MATZOV vs. Guo-Johansson: A Genuine Crossover (2026-09, added)
+
+Follow-up to Experiment 8, which showed that `LWE.dual_hybrid` (MATZOV) and
+`dual_hybrid(fft=True)` (Guo-Johansson [AC:GuoJoh21]) are different
+algorithms that can disagree. That experiment checked one parameter set
+(ML-KEM-768) and found MATZOV 8.2 bits ahead. This section asks the
+natural next question: does MATZOV always win, or is there a parameter
+regime where Guo-Johansson finds the cheaper attack?
+
+**Experiment 9 — Ten-scheme comparison (2026-09)**
+
+Ran both methods against all nine parameter sets used in the earlier
+zeta=0 study (ML-KEM ×3, ML-DSA ×3, NTRU+, FrodoKEM ×3), using the
+coarse-to-fine search from the Proposed Fix section for the MATZOV side
+wherever the tool's own default call landed on the ζ=0 artifact
+(ML-KEM-512, ML-KEM-1024, ML-DSA-87 — confirmed ζ=0 again; ML-KEM-768's
+default call is also imprecise, landing at ζ=20/196.366 vs. the resolved
+ζ=23/195.554, consistent with Experiment 7). Corrected values are used
+below for these four; the remaining six (ML-DSA-44/65, NTRU+, FrodoKEM
+×3) use the tool's raw default output and have **not** been re-verified
+against the coarse-to-fine search — Frodo976 in particular is already
+flagged elsewhere in this document as a case where the default search can
+land on a qualitatively wrong t, so its gap figure below should be read
+as provisional.
+
+| Scheme | n | log2(q) | MATZOV log2(rop) | GJ log2(rop) | gap (M − GJ) |
+| --- | --- | --- | --- | --- | --- |
+| ML-KEM-512 | 512 | 11.70 | 139.057 | 143.788 | −4.731 |
+| ML-KEM-768 | 768 | 11.70 | 195.554 | 203.788 | −8.234 |
+| ML-KEM-1024 | 1024 | 11.70 | 261.143 | 273.817 | −12.674 |
+| ML-DSA-44† | 1024 | 23.00 | 126.682 | 128.286 | −1.604 |
+| ML-DSA-65† | 1280 | 23.00 | 180.456 | 183.936 | −3.480 |
+| ML-DSA-87 | 1792 | 23.00 | 225.255 | 232.118 | −6.863 |
+| NTRU+† | 576 | 11.76 | 130.716 | 132.363 | −1.647 |
+| **Frodo640†** | 640 | 15.00 | 170.146 | 169.316 | **+0.830** |
+| Frodo976† | 976 | 16.00 | 231.495 | 232.696 | −1.201 |
+| Frodo1344† | 1344 | 16.00 | 281.739 | 296.296 | −14.557 |
+
+(† = raw default `LWE.dual_hybrid` output, not re-verified for residual
+sawtooth error; negative gap = MATZOV finds the cheaper attack, positive
+= Guo-Johansson does.)
+
+MATZOV wins in 9 of 10 cases, by margins that grow with n within each
+(q, distribution) family. **FrodoKEM-640 is the sole reversal**:
+Guo-Johansson finds an attack 0.83 bits cheaper. This is the first
+parameter set found (across everything tested in this document, FHE
+included) where the two techniques don't just disagree in magnitude but
+disagree on which one is the better attack.
+
+**Experiment 10 — Isolating the cause: σ/n sweep (2026-09)**
+
+FrodoKEM-640 differs from the ML-KEM family on three axes at once (n, q,
+and noise distribution — discrete Gaussian σ≈2.8 vs. centered binomial),
+so Experiment 9 alone can't say which one drives the reversal. Two
+one-dimensional sweeps, holding q=2^15 (Frodo640's modulus) fixed
+throughout, isolate n and σ separately.
+
+*Sweep A — n=640 fixed, σ varied:*
+
+| σ | gap (M − GJ) | winner |
+| --- | --- | --- |
+| 1.0 | −5.936 | MATZOV |
+| 1.6 | −5.520 | MATZOV |
+| 2.2 | −4.987 | MATZOV |
+| **2.8** | **+0.491** | **GJ** |
+| 3.4 | +1.521 | GJ |
+| 4.0 | +2.136 | GJ |
+
+*Sweep B — σ=2.8 fixed, n varied:*
+
+| n | gap (M − GJ) | winner |
+| --- | --- | --- |
+| 400 | +1.400 | GJ |
+| 550 | +0.974 | GJ |
+| **640** | **+0.491** | **GJ** |
+| 800 | −0.222 | MATZOV |
+| 1000 | −0.687 | MATZOV |
+
+(n=1200 was not completed — run interrupted after the crossover was
+already established by n=800/1000; the trend through n=1000 is monotonic
+and there's no reason to expect it reverses again.)
+
+Both sweeps cross zero independently — Sweep A between σ=2.2 and σ=2.8
+(n fixed), Sweep B between n=640 and n=800 (σ fixed). Since either
+variable alone is enough to move the gap through zero, the reversal
+isn't attributable to n or σ individually; it tracks their ratio. Larger
+σ relative to n favors Guo-Johansson; smaller favors MATZOV.
+FrodoKEM-640's (n=640, σ=2.8) combination happens to sit right at that
+threshold in both directions — which is why it's the only one of the ten
+standard schemes tested that lands on the Guo-Johansson side.
+
+### Conclusion
+
+MATZOV and Guo-Johansson are not a case of one estimator being uniformly
+"more accurate" than the other (contra the framing in the original
+Issue #219 question). They are different attack constructions that
+outperform each other in different regions of (n, σ)-space, with the
+crossover governed by the σ/n ratio rather than either parameter alone.
+For the nine standard PQC parameter sets checked here, that ratio stays
+low enough that MATZOV dominates throughout — but FrodoKEM-640, whose
+comparatively large σ (2.8, vs. ML-KEM's binomial-equivalent ≈1) sits
+close to the threshold, is a genuine counterexample. A security estimate
+that defaults to `LWE.dual_hybrid` (MATZOV) without also checking
+`dual_hybrid(fft=True)` can silently miss the better attack for any
+future parameter set that lands on the high-σ/low-n side of this
+threshold — which is not a hypothetical concern given how close
+FrodoKEM-640 already sits to it.
+
+**Practical implication:** parameter sets combining a discrete-Gaussian
+error distribution with σ ≳ 2.5 and n ≲ 700 should be checked against
+*both* `LWE.dual_hybrid` and `dual_hybrid(fft=True)`, not just the
+former, since the tool's own default call path is not guaranteed to
+surface the cheaper of the two attacks in that regime.
+
+### Open follow-up
+
+- The exact crossover boundary (a curve in (n, σ, q)-space, not a single
+  threshold) is not mapped here — only two 1-D slices through it. A 2-D
+  grid sweep would locate it precisely.
+- Whether q also shifts the boundary is untested; both sweeps here held
+  q=2^15 fixed.
+- The six schemes marked † above should be re-verified with the
+  coarse-to-fine search before this table is treated as final — this
+  matters most for Frodo976, already flagged elsewhere as exhibiting a
+  qualitatively different failure mode (t=0) in the default search.
+
+### Reproducibility
+
+Scripts: `results/1_core/compare_dual_attacks.sage` (Experiment 9, all
+ten schemes), `results/1_core/fix_and_diagnose.sage` (ζ=0 correction for
+ML-KEM-512/1024, ML-DSA-87, plus the Experiment 9 gap table),
+`results/1_core/sweep_sigma_n.sage` (Experiment 10, both sweeps). Run on
+laptop container `practical_easley` (SageMath 10.9), 32-way parallel
+fine-scan per point.

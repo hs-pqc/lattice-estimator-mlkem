@@ -716,3 +716,54 @@ distinguisher is useless") rather than just an imprecise number. It does
 not affect schemes that bypass MATZOV via an independent codebase —
 confirmed for NTRU (HPS/HRSS, via `NTRU.dual_hybrid`) and HAETAE (via
 `pq-crystals/security-estimates`).
+
+### Frodo640: the single case where MATZOV "lost" — and why it isn't a real exception
+
+The 10-scheme MATZOV-vs-Guo-Johansson comparison (`compare_dual_attacks.sage`,
+`results/1_core/results/dual_attack_comparison.json`) found nine cases where
+MATZOV's own grid search reports a cheaper attack than Guo-Johansson's
+FFT distinguisher, and exactly one exception: **Frodo640**, where both
+searches happened to land on the same ζ=10 and Guo-Johansson reported a
+1-bit-cheaper cost (169 vs 170). This raised the question of whether
+Frodo640's cost surface genuinely favors the Guo-Johansson formula, or
+whether this is just another instance of the same greedy-search defect
+landing, this once, on the losing side.
+
+Fixing ζ and scanning MATZOV's own cost function directly
+(`matzov.cost(..., k_enum=ζ_fixed, ...)`, following the pattern from
+`verify_parallel_v2.sage`) resolves this:
+
+| Fixed ζ | MATZOV log2(rop) |
+| ------- | ----------------- |
+| 5       | 171.296            |
+| **10** (value used in the 10-scheme comparison) | **170.146** |
+| **13** (true optimum) | **169.326** |
+| 15      | 169.978            |
+| 20      | 172.874            |
+
+MATZOV's own step=10 grid tested ζ=10 and moved on, missing ζ=13, which
+is 0.821 bits cheaper by MATZOV's own cost model — the same
+early-abort-grid miss pattern as Issue #219, reproduced here on a scheme
+where the reported comparison happened to make MATZOV look worse. The
+same fixed-ζ scan on ML-KEM-768 independently reproduces Experiment 7's
+finding (true optimum ζ=23, 195.701 bits, cheaper than the ζ=20 point the
+grid search reports), confirming the scan methodology against a known
+result before trusting it on Frodo640.
+
+A fully matched head-to-head against Guo-Johansson at the same fixed ζ
+(via `DualHybrid.optimize_blocksize(..., fft=True, ...)` called directly)
+was attempted but blocked by an apparent library-internal bug in this
+estimator version (`optimize_blocksize` with `fft=True` raises "does not
+know about a key but should: 'mem'" before returning); not pursued
+further as out of scope for this note.
+
+**Conclusion**: Frodo640 is not a genuine counter-example to the pattern
+found across the other nine schemes. MATZOV's reported "loss" there
+reflects the same hardcoded step=10 grid landing on a suboptimal ζ, not
+a case where the Guo-Johansson cost formula is intrinsically more
+accurate. All ten schemes in the comparison are consistent with a single
+explanation: MATZOV's own search, not its underlying cost model, is the
+source of the observed cross-method gaps.
+
+Script: `results/1_core/diagnose_fixed_zeta.sage` (MATZOV-only scan,
+zeta fixed via direct `matzov.cost()` calls).

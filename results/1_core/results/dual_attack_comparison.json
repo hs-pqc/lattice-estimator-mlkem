@@ -1,0 +1,232 @@
+[
+  {
+    "scheme": "ML-KEM-512",
+    "known_optimum": {
+      "zeta": 14,
+      "t": 34,
+      "log2_rop": 139
+    },
+    "matzov_indirect": {
+      "log2_rop": 139,
+      "zeta_found": 0,
+      "seconds": 4
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 143,
+      "zeta_found": 19,
+      "seconds": 10
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 145,
+      "zeta_found": 20,
+      "seconds": 0
+    }
+  },
+  {
+    "scheme": "ML-KEM-768",
+    "known_optimum": {
+      "zeta": 23,
+      "t": 59,
+      "log2_rop": 196
+    },
+    "matzov_indirect": {
+      "log2_rop": 196,
+      "zeta_found": 20,
+      "seconds": 7
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 203,
+      "zeta_found": 31,
+      "seconds": 12
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 206,
+      "zeta_found": 32,
+      "seconds": 0
+    }
+  },
+  {
+    "scheme": "ML-KEM-1024",
+    "known_optimum": {
+      "zeta": 32,
+      "t": 82,
+      "log2_rop": 261
+    },
+    "matzov_indirect": {
+      "log2_rop": 262,
+      "zeta_found": 0,
+      "seconds": 9
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 273,
+      "zeta_found": 41,
+      "seconds": 12
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 277,
+      "zeta_found": 41,
+      "seconds": 0
+    }
+  },
+  {
+    "scheme": "ML-DSA-44",
+    "known_optimum": {
+      "zeta": 23,
+      "t": null,
+      "log2_rop": null
+    },
+    "matzov_indirect": {
+      "log2_rop": 126,
+      "zeta_found": 10,
+      "seconds": 3
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 128,
+      "zeta_found": 54,
+      "seconds": 11
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 128,
+      "zeta_found": 56,
+      "seconds": 0
+    }
+  },
+  {
+    "scheme": "ML-DSA-65",
+    "known_optimum": {
+      "zeta": 21,
+      "t": null,
+      "log2_rop": null
+    },
+    "matzov_indirect": {
+      "log2_rop": 180,
+      "zeta_found": 20,
+      "seconds": 6
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 183,
+      "zeta_found": 32,
+      "seconds": 13
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 184,
+      "zeta_found": 34,
+      "seconds": 0
+    }
+  },
+  {
+    "scheme": "ML-DSA-87",
+    "known_optimum": {
+      "zeta": 13,
+      "t": null,
+      "log2_rop": null
+    },
+    "matzov_indirect": {
+      "log2_rop": 225,
+      "zeta_found": 0,
+      "seconds": 7
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 232,
+      "zeta_found": 113,
+      "seconds": 11
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 232,
+      "zeta_found": 118,
+      "seconds": 0
+    }
+  },
+  {
+    "scheme": "NTRU+",
+    "known_optimum": {
+      "zeta": 26,
+      "t": null,
+      "log2_rop": null
+    },
+    "matzov_indirect": {
+      "log2_rop": 130,
+      "zeta_found": 20,
+      "seconds": 3
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 132,
+      "zeta_found": 52,
+      "seconds": 8
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 133,
+      "zeta_found": 57,
+      "seconds": 0
+    }
+  },
+  {
+    "scheme": "Frodo640",
+    "known_optimum": {
+      "zeta": 13,
+      "t": 0,
+      "log2_rop": null
+    },
+    "matzov_indirect": {
+      "log2_rop": 170,
+      "zeta_found": 10,
+      "seconds": 0
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 169,
+      "zeta_found": 10,
+      "seconds": 10
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 171,
+      "zeta_found": 11,
+      "seconds": 0
+    }
+  },
+  {
+    "scheme": "Frodo976",
+    "known_optimum": {
+      "zeta": 17,
+      "t": 43,
+      "log2_rop": null
+    },
+    "matzov_indirect": {
+      "log2_rop": 231,
+      "zeta_found": 20,
+      "seconds": 0
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 232,
+      "zeta_found": 13,
+      "seconds": 11
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 234,
+      "zeta_found": 15,
+      "seconds": 0
+    }
+  },
+  {
+    "scheme": "Frodo1344",
+    "known_optimum": {
+      "zeta": 28,
+      "t": 69,
+      "log2_rop": null
+    },
+    "matzov_indirect": {
+      "log2_rop": 281,
+      "zeta_found": 30,
+      "seconds": 15
+    },
+    "guo_johansson_fft_true": {
+      "log2_rop": 296,
+      "zeta_found": 20,
+      "seconds": 13
+    },
+    "dual_hybrid_fft_false": {
+      "log2_rop": 298,
+      "zeta_found": 20,
+      "seconds": 0
+    }
+  }
+]

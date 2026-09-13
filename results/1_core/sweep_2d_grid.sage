@@ -126,8 +126,8 @@ def gj_log2_rop(params, opt_step=4):
 OUT_PATH = "/home/sage/lattice-estimator-mlkem/results/1_core/results/sweep_2d_grid.json"
 Q_FIXED = 32768
 
-n_values = [550, 640, 700, 800]
-sigma_values = [2.2, 2.5, 2.8, 3.1]
+n_values = [700, 730, 760, 800]
+sigma_values = [2.5, 2.65, 2.8, 2.95, 3.1]
 
 results = []
 if os.path.exists(OUT_PATH):
@@ -155,7 +155,7 @@ for n in n_values:
         elapsed = time.time() - t0
         flag = "GJ" if gap > 0 else "MATZOV"
         print(f"n={n:4d} sigma={sigma:.1f}  matzov={matzov_v:8.3f}  gj={gj_v:8.3f}  gap={gap:+8.3f}  winner={flag}  ({elapsed:.0f}s)")
-        results.append({"n": n, "sigma": sigma, "matzov": matzov_v, "gj": gj_v, "gap": gap})
+        results.append({"n": int(n), "sigma": float(sigma), "matzov": float(matzov_v), "gj": float(gj_v), "gap": float(gap)})
         with open(OUT_PATH, "w") as f:
             json.dump(results, f, indent=2)
 

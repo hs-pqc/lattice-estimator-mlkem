@@ -1,0 +1,5 @@
+*.sage.py
+*.sage.b64
+*.log
+*.txt.bak
+sweep_2d_log*.txt

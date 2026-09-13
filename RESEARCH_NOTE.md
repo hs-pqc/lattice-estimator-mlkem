@@ -885,8 +885,8 @@ approach. The crossing itself is unambiguous (bracketed by σ=2.8 and
 perfectly smooth in this region and a finer σ step there would be needed
 before treating the n=800 crossover value as fully resolved.
 
-![Gap vs sigma per n](results/fig_gap_vs_sigma.png)
-![Boundary curve](results/fig_boundary_curve.png)
+![Gap vs sigma per n](results/1_core/fig_gap_vs_sigma.png)
+![Boundary curve](results/1_core/fig_boundary_curve.png)
 
 **Open follow-up:** the acceleration seen between n=730 and n=800
 suggests the boundary may continue steepening (or turn back) beyond

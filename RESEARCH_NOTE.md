@@ -850,3 +850,50 @@ ML-KEM-512/1024, ML-DSA-87, plus the Experiment 9 gap table),
 `results/1_core/sweep_sigma_n.sage` (Experiment 10, both sweeps). Run on
 laptop container `practical_easley` (SageMath 10.9), 32-way parallel
 fine-scan per point.
+
+### Experiment 11: mapping the crossover boundary in (n, σ)-space
+
+Experiment 10 checked two 1-D slices through the MATZOV/Guo-Johansson
+crossover and found it near n=640-800, σ≈2.2-2.8, without resolving its
+shape. A 4×4 grid (n ∈ {550,640,700,800}, σ ∈ {2.2,2.5,2.8,3.1}, q=2^15
+fixed) followed by a refinement pass around the n=700-800 region
+(n ∈ {700,730,760,800}, σ ∈ {2.5,2.6,2.8,3.0,3.1}) gives 30 points total,
+from which the zero-gap σ can be linearly interpolated at each n:
+
+| n   | crossover σ (interpolated) |
+| --- | --------------------------- |
+| 550 | 2.45 |
+| 640 | 2.49 |
+| 700 | 2.50 |
+| 730 | 2.52 |
+| 760 | 2.62 |
+| 800 | 2.89 |
+
+The boundary is flat from n=550 to n=730 (σ moves only 0.07 over that
+range) and then rises sharply — σ moves 0.37 from n=730 to n=800, more
+than five times as fast per unit n. This rules out a simple linear
+relationship between the crossover σ and n; the boundary is convex,
+accelerating as n grows. FrodoKEM-640's own (n=640, σ=2.8) point sits
+well inside the Guo-Johansson region at this q, consistent with
+Experiment 9's finding.
+
+One local non-monotonicity was observed at n=800: gap goes −0.295 (σ=2.5)
+→ −0.145 (σ=2.6) → −0.222 (σ=2.8) → +0.293 (σ=3.0), i.e. the gap moves
+toward zero, back away from it, then crosses — not a clean monotonic
+approach. The crossing itself is unambiguous (bracketed by σ=2.8 and
+σ=3.0), but the interior wiggle suggests the cost surface is not
+perfectly smooth in this region and a finer σ step there would be needed
+before treating the n=800 crossover value as fully resolved.
+
+![Gap vs sigma per n](results/fig_gap_vs_sigma.png)
+![Boundary curve](results/fig_boundary_curve.png)
+
+**Open follow-up:** the acceleration seen between n=730 and n=800
+suggests the boundary may continue steepening (or turn back) beyond
+n=800 — untested here. A similar grid at fixed n varying q would check
+whether q=2^15 is representative or whether the boundary's shape is
+q-dependent.
+
+Script: `results/1_core/sweep_2d_grid.sage` (coarse 4×4 grid + refinement
+pass over n ∈ {700,730,760,800} × σ ∈ {2.5,2.6,2.8,3.0,3.1}). Data:
+`results/1_core/results/sweep_2d_grid.json` (30 points).
